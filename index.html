@@ -58,7 +58,6 @@ body{
   overflow-x:hidden;
   overscroll-behavior-y:contain;
   overscroll-behavior-x:none;
-  touch-action:pan-y;
 }
 
 .page{ max-width:640px; margin:0 auto; overflow-x:hidden; }
@@ -314,8 +313,8 @@ main{ padding:16px 22px 0; background:var(--canvas); }
       <input id="cadNumero" type="text" maxlength="20" placeholder="Ex: 31032">
     </div>
     <div class="form-field">
-      <label>Pista <span style="font-weight:400">(em qual pista você serve?)</span></label>
-      <input id="cadPista" type="text" maxlength="80" placeholder="Ex: Cozinha, Trilha, Louvor…">
+      <label>Pista <span style="font-weight:400">(nome oficial da sua pista)</span></label>
+      <input id="cadPista" type="text" maxlength="80" placeholder="Ex: Superação">
     </div>
     <div class="form-field">
       <label>1º TOP <span style="font-weight:400">(qual foi seu TOP de Senderista?)</span></label>
@@ -429,7 +428,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
     <p class="modal-title">Configurações</p>
     <div class="form-field"><label>Nome completo</label><input id="setNome" type="text" maxlength="120"></div>
     <div class="form-field"><label>Nº de Legendário</label><input id="setNumero" type="text" maxlength="20"></div>
-    <div class="form-field"><label>Pista</label><input id="setPista" type="text" maxlength="80"></div>
+    <div class="form-field"><label>Pista</label><input id="setPista" type="text" maxlength="80" placeholder="Ex: Superação"></div>
     <div class="form-field"><label>1º TOP</label><input id="setTop" type="text" maxlength="80"></div>
     <div class="form-check">
       <input type="checkbox" id="setConsent">
