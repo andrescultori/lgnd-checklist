@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#EDE4CF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Legendários">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Checklist — Legendários</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@700;800&family=Work+Sans:wght@400;500;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --canvas: #EDE4CF;
+  --canvas-deep: #E1D3B2;
+  --paper: #F6F0E1;
+  --ink: #262420;
+  --ink-soft: #56503f;
+  --line: #C9B993;
+  --forest: #3F4B3A;
+  --forest-deep: #2C3527;
+  --forest-tint: #DFE4D6;
+  --clay: #A6532E;
+  --clay-deep: #7C3D22;
+  --clay-tint: #F0DFCF;
+  --steel: #3D6B72;
+  --steel-deep: #294A50;
+  --steel-tint: #DCE7E7;
+  --accent: var(--forest);
+  --accent-deep: var(--forest-deep);
+  --accent-tint: var(--forest-tint);
+}
+
+*{ box-sizing:border-box; }
+
+html{ overflow-x:hidden; overscroll-behavior-x:none; }
+
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  max-width:100%;
+  background:var(--canvas);
+  color:var(--ink);
+  color-scheme: light;
+  font-family:'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+}
+
+body{
+  min-height:100vh;
+  padding-bottom:calc(60px + env(safe-area-inset-bottom));
+  overflow-x:hidden;
+  overscroll-behavior-y:contain;
+  overscroll-behavior-x:none;
+  touch-action:pan-y;
+}
+
+.page{ max-width:640px; margin:0 auto; overflow-x:hidden; }
+
+/* ---------- Masthead ---------- */
+
+.masthead{
+  position:relative;
+  background:var(--accent-deep);
+  color:var(--paper);
+  padding:28px 22px 22px;
+  overflow:hidden;
+  transition:background .35s ease;
+}
+.masthead .contour{ position:absolute; inset:0; opacity:.16; pointer-events:none; }
+.masthead-top{ position:relative; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.masthead-actions{ display:flex; gap:8px; flex-shrink:0; }
+
+h1{
+  font-family:'Bitter', Georgia, serif;
+  font-weight:800;
+  font-size:34px;
+  line-height:1;
+  margin:4px 0 4px;
+  letter-spacing:-.01em;
+}
+
+.legendario-tag{
+  margin:0 0 8px;
+  font-size:13.5px;
+  font-weight:600;
+  color:var(--paper);
+  opacity:.85;
+}
+
+.subtitle{
+  margin:0;
+  font-size:14.5px;
+  color:var(--paper);
+  opacity:.85;
+  max-width:30ch;
+  line-height:1.4;
+}
+
+.icon-btn{
+  position:relative;
+  background:rgba(246,240,225,.14);
+  border:1px solid rgba(246,240,225,.4);
+  color:var(--paper);
+  font-family:inherit;
+  font-size:12.5px;
+  padding:7px 11px;
+  border-radius:7px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background .15s ease;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.icon-btn:hover{ background:rgba(246,240,225,.24); }
+.icon-btn:active{ transform:translateY(1px); }
+
+.progress-wrap{ position:relative; margin-top:20px; }
+.progress-label{ display:flex; justify-content:space-between; font-size:13px; color:var(--paper); opacity:.9; margin-bottom:7px; }
+.progress-label strong{ font-weight:700; }
+.progress-track{ height:8px; border-radius:5px; background:rgba(246,240,225,.22); overflow:hidden; }
+.progress-fill{ height:100%; background:var(--paper); border-radius:5px; width:0%; transition:width .4s cubic-bezier(.4,0,.2,1); }
+
+/* ---------- Tabs ---------- */
+
+.tags{ display:flex; gap:8px; padding:16px 22px 0; }
+
+.tag-btn{
+  flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:3px;
+  padding:11px 12px; border-radius:10px 10px 4px 4px; border:2px solid var(--line);
+  background:var(--paper); color:var(--ink-soft); font-family:'Work Sans', sans-serif;
+  font-weight:600; font-size:13.5px; cursor:pointer; text-align:left; position:relative;
+  transition:border-color .2s ease, color .2s ease, background .2s ease;
+}
+.tag-top{ display:flex; align-items:center; gap:7px; width:100%; min-width:0; }
+.tag-btn .tag-icon{ flex-shrink:0; opacity:.55; transition:opacity .2s ease; }
+.tag-btn .tag-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.tag-btn .tag-count{ font-size:11.5px; font-weight:600; color:var(--ink-soft); opacity:.6; padding-left:25px; }
+.tag-btn[data-pack="ataque"].is-active{ border-color:var(--forest); color:var(--forest-deep); background:var(--forest-tint); }
+.tag-btn[data-pack="ataque"].is-active .tag-icon{ opacity:1; }
+.tag-btn[data-pack="cargueira"].is-active{ border-color:var(--clay); color:var(--clay-deep); background:var(--clay-tint); }
+.tag-btn[data-pack="cargueira"].is-active .tag-icon{ opacity:1; }
+.tag-btn[data-pack="comprar"].is-active{ border-color:var(--steel); color:var(--steel-deep); background:var(--steel-tint); }
+.tag-btn[data-pack="comprar"].is-active .tag-icon{ opacity:1; }
+
+/* ---------- Pack info ---------- */
+
+main{ padding:16px 22px 0; background:var(--canvas); }
+
+.pack-info{ background:var(--paper); border-left:4px solid var(--accent); border-radius:2px 10px 10px 2px; padding:14px 16px; margin-bottom:18px; transition:border-color .3s ease; }
+.pack-info .meta-row{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:var(--ink-soft); margin-bottom:8px; }
+.pack-info .meta-row span b{ color:var(--ink); font-weight:600; }
+.meta-value{ border-bottom:1px dashed var(--ink-soft); cursor:text; outline:none; }
+.meta-value:focus{ border-bottom-style:solid; border-bottom-color:var(--accent); }
+.meta-hint{ margin:0 0 8px; font-size:11.5px; font-style:italic; color:var(--ink-soft); opacity:.7; }
+.pack-info p{ margin:0; font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
+
+/* ---------- Sections ---------- */
+
+.section-block{ border-bottom:1px dashed var(--line); padding:2px 0 6px; background:var(--canvas); }
+.section-block:last-child{ border-bottom:none; }
+.section-block summary{ display:flex; align-items:center; gap:10px; padding:12px 2px; cursor:pointer; list-style:none; font-family:'Bitter', Georgia, serif; font-weight:700; font-size:16.5px; color:var(--ink); }
+.section-block summary::-webkit-details-marker{ display:none; }
+.section-num{ font-family:'Work Sans', sans-serif; font-weight:700; font-size:12px; color:var(--paper); background:var(--accent); border-radius:5px; width:24px; height:24px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .3s ease; }
+.section-title{ flex:1; }
+.section-progress{ font-family:'Work Sans', sans-serif; font-weight:600; font-size:12.5px; color:var(--ink-soft); flex-shrink:0; }
+.section-progress.is-complete{ color:var(--accent-deep); }
+.chevron{ flex-shrink:0; transition:transform .2s ease; color:var(--ink-soft); }
+.section-block[open] .chevron{ transform:rotate(90deg); }
+
+.items{ list-style:none; margin:0 0 6px; padding:0 2px 0 0; background:var(--canvas); }
+.item{ background:var(--canvas); }
+.item-row{ display:flex; align-items:flex-start; gap:10px; padding:7px 0; cursor:pointer; background:var(--canvas); }
+
+.check{ flex-shrink:0; margin-top:1px; width:19px; height:19px; border-radius:5px; border:2px solid var(--line); background:var(--paper); position:relative; transition:background .15s ease, border-color .15s ease; }
+.check.is-checked{ background:var(--accent); border-color:var(--accent); }
+.check.is-checked::after{ content:""; position:absolute; left:5px; top:1px; width:5px; height:9px; border:solid var(--paper); border-width:0 2px 2px 0; transform:rotate(40deg); }
+
+.item-text{ font-size:14.5px; line-height:1.4; color:var(--ink); padding-top:0px; flex:1; }
+.item-text.is-checked{ color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line); text-decoration-thickness:1.5px; }
+.item-note{ font-size:12.5px; color:var(--ink-soft); font-style:italic; }
+.item-link{ font-size:12px; color:var(--accent-deep); margin-left:6px; white-space:nowrap; }
+
+.item-edit{ flex-shrink:0; background:none; border:none; color:var(--ink-soft); opacity:.45; font-size:14px; cursor:pointer; padding:2px 4px; }
+.item-edit:hover{ opacity:.9; }
+
+.subitems{ list-style:none; margin:0 0 2px 29px; padding:0 0 4px; border-left:2px solid var(--line); background:var(--canvas); }
+.subitems .item-row{ padding:5px 0 5px 12px; background:var(--canvas); }
+.subitems .item-text{ font-size:13.5px; }
+.subitems .check{ width:16px; height:16px; }
+.subitems .check.is-checked::after{ left:4px; top:0px; width:4px; height:8px; }
+
+.add-item-btn{
+  display:block; width:100%; margin:2px 0 10px; padding:9px 10px; border-radius:8px;
+  border:1.5px dashed var(--line); background:transparent; color:var(--ink-soft);
+  font-family:'Work Sans', sans-serif; font-weight:600; font-size:13px; cursor:pointer; text-align:center;
+}
+.add-item-btn:hover{ border-color:var(--accent); color:var(--accent-deep); }
+
+.loading{ padding:60px 22px; text-align:center; color:var(--ink-soft); font-size:14px; }
+
+.credit{ text-align:center; margin:22px 22px 0; padding-top:16px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--ink-soft); }
+.credit a{ color:var(--ink-soft); text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:2px; }
+.credit a:hover{ color:var(--ink); }
+
+/* ---------- Modal (confirm / item form / settings) ---------- */
+
+.overlay{
+  position:fixed; inset:0; background:rgba(38,36,32,.5); display:flex; align-items:center;
+  justify-content:center; padding:24px; opacity:0; pointer-events:none; transition:opacity .18s ease; z-index:50;
+  overflow-y:auto;
+}
+.overlay.is-visible{ opacity:1; pointer-events:auto; }
+.modal-card{
+  background:var(--paper); border-radius:14px; padding:22px 20px; max-width:380px; width:100%;
+  box-shadow:0 12px 32px rgba(38,36,32,.28); transform:translateY(6px); transition:transform .18s ease;
+  margin:auto;
+}
+.overlay.is-visible .modal-card{ transform:translateY(0); }
+.modal-title{ font-family:'Bitter', Georgia, serif; font-weight:800; font-size:19px; margin:0 0 8px; color:var(--ink); }
+.modal-body{ font-size:13.5px; line-height:1.5; color:var(--ink-soft); margin:0 0 18px; }
+.modal-actions{ display:flex; gap:10px; margin-top:6px; }
+.modal-btn{ flex:1; padding:11px 10px; border-radius:9px; font-family:'Work Sans', sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:2px solid transparent; }
+.modal-cancel{ background:var(--canvas); border-color:var(--line); color:var(--ink); }
+.modal-ok{ background:var(--clay-deep); color:var(--paper); }
+.modal-ok.primary{ background:var(--accent-deep); }
+.modal-btn:active{ transform:translateY(1px); }
+.modal-btn:disabled{ opacity:.55; cursor:default; }
+
+.form-field{ margin-bottom:13px; }
+.form-field label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; }
+.form-field input, .form-field textarea{
+  width:100%; padding:10px 11px; border-radius:8px; border:1.5px solid var(--line);
+  background:var(--canvas); color:var(--ink); font-family:'Work Sans', sans-serif; font-size:14px;
+}
+.form-field input:focus, .form-field textarea:focus{ outline:none; border-color:var(--accent); }
+.form-check{ display:flex; align-items:flex-start; gap:9px; margin:14px 0 4px; }
+.form-check input{ margin-top:3px; flex-shrink:0; width:17px; height:17px; }
+.form-check p{ margin:0; font-size:12.5px; line-height:1.5; color:var(--ink-soft); }
+.form-check p b{ color:var(--ink); }
+.form-hint{ font-size:11.5px; color:var(--ink-soft); opacity:.75; margin:4px 0 0; }
+
+.text-btn{ background:none; border:none; font-family:'Work Sans', sans-serif; font-size:12.5px; cursor:pointer; padding:8px 0 0; display:block; width:100%; text-align:center; }
+.text-btn.danger{ color:var(--clay-deep); }
+.text-btn.muted{ color:var(--ink-soft); }
+
+.field-error{ color:var(--clay-deep); font-size:12.5px; margin:0 0 10px; display:none; }
+.field-error.is-visible{ display:block; }
+
+/* ---------- Login / Cadastro screens ---------- */
+
+.gate{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 22px; background:var(--forest-deep); color:var(--paper); text-align:center; }
+.gate-logo{ width:88px; height:88px; margin-bottom:18px; }
+.gate h1{ font-size:30px; margin:0 0 10px; }
+.gate p{ font-size:14.5px; opacity:.85; max-width:32ch; margin:0 0 28px; line-height:1.5; }
+.google-btn{
+  display:flex; align-items:center; gap:10px; background:var(--paper); color:var(--ink);
+  border:none; border-radius:10px; padding:13px 22px; font-family:'Work Sans', sans-serif;
+  font-weight:600; font-size:15px; cursor:pointer;
+}
+.google-btn:active{ transform:translateY(1px); }
+.gate-error{ margin-top:16px; font-size:13px; color:#E7C9BA; max-width:34ch; }
+
+.cadastro-wrap{ min-height:100vh; background:var(--canvas); padding:28px 22px calc(40px + env(safe-area-inset-bottom)); }
+.cadastro-card{ max-width:480px; margin:0 auto; }
+.cadastro-card h1{ color:var(--ink); font-size:26px; margin:0 0 6px; }
+.cadastro-card .lead{ color:var(--ink-soft); font-size:14px; line-height:1.5; margin:0 0 24px; }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div class="gate" id="screenLogin" style="display:none">
+  <svg class="gate-logo" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#F6F0E1" d="M232 194 375 754 762 610 700 480 486 560 386 175Z"/>
+  </svg>
+  <h1>Legendários</h1>
+  <p>Sua checklist de equipamentos, salva na nuvem e sempre à mão. Entre com sua conta Google pra começar.</p>
+  <button class="google-btn" id="googleLoginBtn">
+    <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+    Entrar com Google
+  </button>
+  <p class="gate-error" id="loginError"></p>
+</div>
+
+<!-- ===================== LOADING ===================== -->
+<div class="gate" id="screenLoading">
+  <p style="opacity:.7">Carregando…</p>
+</div>
+
+<!-- ===================== CADASTRO ===================== -->
+<div class="cadastro-wrap" id="screenCadastro" style="display:none">
+  <div class="cadastro-card">
+    <h1>Bem-vindo, Legendário</h1>
+    <p class="lead">Antes de montar sua checklist, precisamos de alguns dados seus.</p>
+
+    <div class="form-field">
+      <label>Nome completo</label>
+      <input id="cadNome" type="text" maxlength="120" placeholder="Seu nome completo">
+    </div>
+    <div class="form-field">
+      <label>E-mail</label>
+      <input id="cadEmail" type="text" disabled>
+    </div>
+    <div class="form-field">
+      <label>Nº de Legendário</label>
+      <input id="cadNumero" type="text" maxlength="20" placeholder="Ex: 31032">
+    </div>
+    <div class="form-field">
+      <label>Pista <span style="font-weight:400">(em qual pista você serve?)</span></label>
+      <input id="cadPista" type="text" maxlength="80" placeholder="Ex: Cozinha, Trilha, Louvor…">
+    </div>
+    <div class="form-field">
+      <label>1º TOP <span style="font-weight:400">(qual foi seu TOP de Senderista?)</span></label>
+      <input id="cadTop" type="text" maxlength="80" placeholder="Ex: TOP 45">
+    </div>
+
+    <div class="form-check">
+      <input type="checkbox" id="cadConsent">
+      <p><b>Aceito receber novidades sobre os projetos do André por e-mail.</b><br>Não se preocupe — não vou te encher de e-mails. Só uso isso pra avisar sobre coisas que valem a pena.</p>
+    </div>
+
+    <p class="field-error" id="cadError"></p>
+
+    <button class="modal-btn modal-ok primary" id="cadSubmit" style="width:100%;margin-top:6px;">Começar minha checklist</button>
+    <button class="text-btn muted" id="cadLogout">Sair / trocar de conta</button>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div class="page" id="screenApp" style="display:none">
+
+  <header class="masthead" id="masthead">
+    <svg class="contour" viewBox="0 0 600 200" preserveAspectRatio="none">
+      <path d="M-10 150 Q100 100 200 140 T400 120 T620 150" fill="none" stroke="#F6F0E1" stroke-width="1.5"/>
+      <path d="M-10 175 Q100 130 220 165 T420 150 T620 180" fill="none" stroke="#F6F0E1" stroke-width="1.5"/>
+      <path d="M-10 120 Q120 70 240 110 T460 90 T620 115" fill="none" stroke="#F6F0E1" stroke-width="1.5"/>
+      <path d="M-10 60 Q140 20 260 55 T480 40 T620 65" fill="none" stroke="#F6F0E1" stroke-width="1.5"/>
+    </svg>
+    <div class="masthead-top">
+      <div>
+        <h1>Legendários</h1>
+        <p class="legendario-tag" id="legendarioTag"></p>
+        <p class="subtitle">Checklist de equipamentos para a mochila de ataque e a mochila cargueira</p>
+      </div>
+      <div class="masthead-actions">
+        <button class="icon-btn" id="settingsBtn" title="Configurações">⚙</button>
+        <button class="icon-btn" id="resetBtn" title="Desmarcar tudo">Zerar tudo</button>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Preparo geral</span><strong id="overallCount">0 de 0</strong></div>
+      <div class="progress-track"><div class="progress-fill" id="overallFill"></div></div>
+    </div>
+  </header>
+
+  <nav class="tags">
+    <button class="tag-btn is-active" data-pack="ataque">
+      <div class="tag-top">
+        <svg class="tag-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 8V6a4 4 0 0 1 8 0v2"/><rect x="5" y="8" width="14" height="13" rx="2.5"/><path d="M9 12h6M9 16h6"/></svg>
+        <span class="tag-label">Ataque</span>
+      </div>
+      <span class="tag-count" id="countAtaque"></span>
+    </button>
+    <button class="tag-btn" data-pack="cargueira">
+      <div class="tag-top">
+        <svg class="tag-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="9" width="17" height="11" rx="2.5"/><path d="M8 9V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3.5 13.5h17"/></svg>
+        <span class="tag-label">Cargueira</span>
+      </div>
+      <span class="tag-count" id="countCargueira"></span>
+    </button>
+    <button class="tag-btn" data-pack="comprar">
+      <div class="tag-top">
+        <svg class="tag-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h2l1.6 9.6a2 2 0 0 0 2 1.7h7.3a2 2 0 0 0 2-1.6L20 9H6.5"/><circle cx="10" cy="20" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="20" r="1.3" fill="currentColor" stroke="none"/></svg>
+        <span class="tag-label">Comprar</span>
+      </div>
+      <span class="tag-count" id="countComprar"></span>
+    </button>
+  </nav>
+
+  <main id="main">
+    <div class="loading">Carregando sua lista…</div>
+  </main>
+
+  <p class="credit">Desenvolvido por <a href="https://github.com/andrescultori" target="_blank" rel="noopener">André Scultori</a></p>
+
+</div>
+
+<!-- ===================== Confirm reset ===================== -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal-card">
+    <p class="modal-title">Zerar tudo?</p>
+    <p class="modal-body">Isso desmarca todos os itens das três listas — Ataque, Cargueira e Comprar. Não há como reverter isso. Você vai ter que refazer tudo.</p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" id="confirmCancel">Cancelar</button>
+      <button class="modal-btn modal-ok" id="confirmOk">Zerar tudo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Item add/edit modal ===================== -->
+<div class="overlay" id="itemModalOverlay">
+  <div class="modal-card">
+    <p class="modal-title" id="itemModalTitle">Novo item</p>
+    <div class="form-field"><label>Título</label><input id="itemTitle" type="text" maxlength="80"></div>
+    <div class="form-field"><label>Nota (opcional)</label><input id="itemNote" type="text" maxlength="60" placeholder="Ex: OnNight 100"></div>
+    <div class="form-field"><label>Quantidade (opcional)</label><input id="itemQty" type="text" maxlength="30" placeholder="Ex: 2"></div>
+    <div class="form-field"><label>Link (opcional)</label><input id="itemLink" type="url" placeholder="https://"></div>
+    <p class="field-error" id="itemError"></p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" id="itemModalCancel">Cancelar</button>
+      <button class="modal-btn modal-ok primary" id="itemModalSave">Salvar</button>
+    </div>
+    <button class="text-btn danger" id="itemModalDelete" style="display:none">Excluir item</button>
+  </div>
+</div>
+
+<!-- ===================== Settings modal ===================== -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal-card">
+    <p class="modal-title">Configurações</p>
+    <div class="form-field"><label>Nome completo</label><input id="setNome" type="text" maxlength="120"></div>
+    <div class="form-field"><label>Nº de Legendário</label><input id="setNumero" type="text" maxlength="20"></div>
+    <div class="form-field"><label>Pista</label><input id="setPista" type="text" maxlength="80"></div>
+    <div class="form-field"><label>1º TOP</label><input id="setTop" type="text" maxlength="80"></div>
+    <div class="form-check">
+      <input type="checkbox" id="setConsent">
+      <p>Aceito receber novidades sobre os projetos do André por e-mail.</p>
+    </div>
+    <p class="field-error" id="setError"></p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" id="settingsCancel">Cancelar</button>
+      <button class="modal-btn modal-ok primary" id="settingsSave">Salvar</button>
+    </div>
+    <button class="text-btn muted" id="settingsLogout">Sair da conta</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const SUPABASE_URL = 'https://rbtcgurgjoounqwokygj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGNndXJnam9vdW5xd29reWdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MTM0NjYsImV4cCI6MjEwNTA4OTQ2Nn0.66RTBQ9_eWQcP6L8wJief64ryvg2vCq280mZRTfXY44';
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ============================================================
+   STATIC PACK INFO (labels, colors, descriptions — not per-user)
+   ============================================================ */
+const PACKS = {
+  ataque: {
+    label: "Mochila de Ataque", accent: "forest", num: 1,
+    desc: "Essa mochila fica com você o tempo todo, e precisa ter o necessário para toda a trilha. Lembre-se que você vai passar a maior parte do tempo com ela.",
+    hasMeta: true
+  },
+  cargueira: {
+    label: "Mochila Cargueira", accent: "clay", num: 2,
+    desc: "Essa mochila é entregue no check-in, e só é acessada em pontos pré-determinados (verifique com sua coordenação). Não deixe nada aqui que você vai precisar na trilha. Lembre-se de ajudar a logística e não deixar nada para fora, pois pode cair. Separe suas roupas em sacos plásticos, pois podem molhar.",
+    hasMeta: true
+  },
+  comprar: {
+    label: "Comprar", accent: "steel", num: 3,
+    desc: "Itens para comprar antes da viagem.",
+    hasMeta: false
+  }
+};
+
+const ACCENTS = {
+  forest: { base:"var(--forest)", deep:"var(--forest-deep)", tint:"var(--forest-tint)" },
+  clay:   { base:"var(--clay)",   deep:"var(--clay-deep)",   tint:"var(--clay-tint)" },
+  steel:  { base:"var(--steel)",  deep:"var(--steel-deep)",  tint:"var(--steel-tint)" },
+};
+
+/* Default template used only to seed a brand-new user's checklist */
+const TEMPLATE = {
+  ataque: {
+    meta: { sugestao: "Quechua 20l; ou Yepp 18l", tamanho: "20 – 30l" },
+    sections: [
+      { title:"Geral", items:[
+        {t:"Bolsa hidratação"},{t:"Fleece ou blusa de frio"},{t:"Capa de chuva"},
+        {t:"Saco de dormir emergência"},{t:"Meia extra — 1 par"},
+        {t:"Lanterna de cabeça", note:"OnNight 100", children:[{t:"3 pilhas"}]},
+        {t:"Lanterna extra", children:[{t:"3 pilhas"}]},
+        {t:"Balaclava"},{t:"Garrafa extra", note:"isotônico"},{t:"Luvas"},
+        {t:"Capa de mochila"},{t:"Manta térmica"},{t:"Canivete"},
+        {t:"Corta-vento / jaqueta"},{t:"Segunda pele extra"},
+      ]},
+      { title:"Higiene + Saúde", items:[
+        {t:"Toalhinha"},{t:"Lenço umedecido", note:"pacote pequeno"},
+        {t:"Escova e pasta de dente"},{t:"Desodorante"},{t:"2 sacos plásticos"},{t:"3 ziploc"},
+        {t:"Kit primeiros socorros", children:[{t:"Esparadrapo"},{t:"Álcool-gel"},{t:"Repelente"}]},
+      ]},
+      { title:"Comida", items:[
+        {t:"Talheres + prato/pote"},{t:"2 barrinhas de cereal"},{t:"Balinhas"},{t:"Sanduíche p/ primeira manhã"},
+      ]},
+      { title:"Outros", items:[
+        {t:"Documento"},{t:"Propósito de oração"},{t:"Caneta e papel"},{t:"Pilhas extras"},
+      ]},
+    ]
+  },
+  cargueira: {
+    meta: { sugestao: "Nord 55l", tamanho: "50 – 60l" },
+    sections: [
+      { title:"Geral", items:[
+        {t:"Saco de dormir", note:"NTK Freedom"},{t:"Colchonete inflável"},
+        {t:"Barraca", note:"Quechua, 2 pessoas"},{t:"Cobertor"},{t:"Meias — 4 pares"},{t:"Cueca — 3 a 4"},
+        {t:"Toalha"},
+        {t:"Roupa p/ dormir", children:[{t:"Chinelo"}]},
+        {t:"Roupa p/ voltar", children:[{t:"Tênis extra"}]},
+        {t:"5 sacos plásticos", note:"lixo / roupa molhada"},{t:"Segunda pele extra"},
+      ]},
+      { title:"Higiene + Saúde", items:[
+        {t:"Lenço umedecido grande"},{t:"Lenço umedecido pequeno", note:"reserva"},
+        {t:"Shampoo"},{t:"Pomada para assadura"},
+      ]},
+      { title:"Comida", items:[
+        {t:"2 barrinhas de cereal", note:"repor mochila de ataque"},{t:"Prato"},
+      ]},
+      { title:"Outros", items:[
+        {t:"Bastão de caminhada"},{t:"Perneira"},
+      ]},
+    ]
+  },
+  comprar: {
+    sections: [
+      { title:"Comida", items:[
+        {t:"UFO", note:"2"},{t:"Barrinha de cereal", note:"6"},{t:"Snickers", note:"2"},
+        {t:"Bala", note:"pacote"},{t:"Tang", note:"2"},{t:"Amendoim", note:"2 peq"},
+      ]},
+      { title:"Outros", items:[
+        {t:"Pilhas"},{t:"Manta térmica"},
+      ]},
+    ]
+  }
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentUser = null;
+let currentProfile = null;
+let allItems = [];       // flat list of checklist_items rows for this user
+let packMeta = {};        // { ataque: {sugestao,tamanho}, cargueira: {...} }
+let activePack = "ataque";
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function safeLink(url){
+  if(!url) return null;
+  const u = url.trim();
+  if(/^https?:\/\//i.test(u)) return u;
+  return null;
+}
+function showScreen(name){
+  ['screenLoading','screenLogin','screenCadastro','screenApp'].forEach(id=>{
+    document.getElementById(id).style.display = (id===name) ? (name==='screenApp'?'block':'flex') : 'none';
+  });
+}
+function findItemById(id){ return allItems.find(i=>i.id===id); }
+
+/* ============================================================
+   AUTH FLOW
+   ============================================================ */
+async function boot(){
+  showScreen('screenLoading');
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ showScreen('screenLogin'); return; }
+  await afterLogin(session.user);
+}
+
+sb.auth.onAuthStateChange((event, session)=>{
+  if(event === 'SIGNED_IN' && session){ afterLogin(session.user); }
+  if(event === 'SIGNED_OUT'){ currentUser=null; currentProfile=null; showScreen('screenLogin'); }
+});
+
+document.getElementById('googleLoginBtn').addEventListener('click', async ()=>{
+  document.getElementById('loginError').textContent = '';
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if(error){ document.getElementById('loginError').textContent = 'Não foi possível iniciar o login: ' + error.message; }
+});
+
+async function logout(){
+  await sb.auth.signOut();
+}
+document.getElementById('cadLogout').addEventListener('click', logout);
+document.getElementById('settingsLogout').addEventListener('click', logout);
+
+async function afterLogin(user){
+  currentUser = user;
+  showScreen('screenLoading');
+  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  if(error){ console.error(error); showScreen('screenLogin'); document.getElementById('loginError').textContent = 'Erro ao carregar seu perfil.'; return; }
+  if(!profile){
+    document.getElementById('cadEmail').value = user.email || '';
+    showScreen('screenCadastro');
+    return;
+  }
+  currentProfile = profile;
+  await loadAppData();
+  showScreen('screenApp');
+  renderPack('ataque');
+  renderCounts();
+}
+
+/* ============================================================
+   CADASTRO
+   ============================================================ */
+document.getElementById('cadSubmit').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('cadError');
+  errEl.classList.remove('is-visible');
+  const nome = document.getElementById('cadNome').value.trim();
+  const numero = document.getElementById('cadNumero').value.trim().replace(/^#/, '');
+  const pista = document.getElementById('cadPista').value.trim();
+  const top = document.getElementById('cadTop').value.trim();
+  const consent = document.getElementById('cadConsent').checked;
+
+  if(!nome || !numero){
+    errEl.textContent = 'Preencha pelo menos o nome completo e o número de Legendário.';
+    errEl.classList.add('is-visible');
+    return;
+  }
+
+  const btn = document.getElementById('cadSubmit');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const payload = {
+    id: currentUser.id,
+    email: currentUser.email,
+    nome_completo: nome,
+    numero_legendario: numero,
+    pista: pista || null,
+    primeiro_top: top || null,
+    aceita_contato: consent
+  };
+  const { error } = await sb.from('profiles').insert(payload);
+  if(error){
+    errEl.textContent = 'Erro ao salvar: ' + error.message;
+    errEl.classList.add('is-visible');
+    btn.disabled = false; btn.textContent = 'Começar minha checklist';
+    return;
+  }
+
+  await seedDefaultItems(currentUser.id);
+  await afterLogin(currentUser);
+});
+
+async function seedDefaultItems(userId){
+  const parentRows = [];
+  const childrenMap = []; // aligned with parentRows index
+  Object.entries(TEMPLATE).forEach(([packKey, pack])=>{
+    pack.sections.forEach((sec, si)=>{
+      sec.items.forEach((it, ii)=>{
+        parentRows.push({
+          user_id:userId, pack:packKey, section_title:sec.title, section_order:si,
+          item_order:ii, title:it.t, note:it.note||null, quantity:null, link:null, checked:false
+        });
+        childrenMap.push(it.children || null);
+      });
+    });
+  });
+
+  const { data: inserted, error } = await sb.from('checklist_items').insert(parentRows).select();
+  if(error){ console.error('seed parents failed', error); return; }
+
+  const childRows = [];
+  inserted.forEach((row, idx)=>{
+    const children = childrenMap[idx];
+    if(children){
+      children.forEach((ch, ci)=>{
+        childRows.push({
+          user_id:userId, pack:row.pack, section_title:row.section_title, section_order:row.section_order,
+          item_order:ci, title:ch.t, note:ch.note||null, quantity:null, link:null,
+          parent_id: row.id, checked:false
+        });
+      });
+    }
+  });
+  if(childRows.length){
+    const { error: cErr } = await sb.from('checklist_items').insert(childRows);
+    if(cErr) console.error('seed children failed', cErr);
+  }
+
+  const metaRows = Object.entries(TEMPLATE)
+    .filter(([k,p])=>p.meta)
+    .map(([k,p])=>({ user_id:userId, pack:k, sugestao:p.meta.sugestao, tamanho:p.meta.tamanho }));
+  const { error: mErr } = await sb.from('pack_meta').insert(metaRows);
+  if(mErr) console.error('seed pack_meta failed', mErr);
+}
+
+/* ============================================================
+   LOAD DATA
+   ============================================================ */
+async function loadAppData(){
+  const [itemsRes, metaRes] = await Promise.all([
+    sb.from('checklist_items').select('*').eq('user_id', currentUser.id)
+      .order('pack').order('section_order').order('item_order'),
+    sb.from('pack_meta').select('*').eq('user_id', currentUser.id)
+  ]);
+  allItems = itemsRes.data || [];
+  packMeta = {};
+  (metaRes.data || []).forEach(row=>{ packMeta[row.pack] = row; });
+
+  const num = currentProfile.numero_legendario ? ` #${currentProfile.numero_legendario}` : '';
+  document.getElementById('legendarioTag').textContent = `${currentProfile.nome_completo}${num}`;
+}
+
+async function refreshItemsAndRender(){
+  const { data } = await sb.from('checklist_items').select('*').eq('user_id', currentUser.id)
+    .order('pack').order('section_order').order('item_order');
+  allItems = data || [];
+  renderPack(activePack);
+  renderCounts();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function buildSections(packKey){
+  const parents = allItems.filter(i=>i.pack===packKey && !i.parent_id)
+    .sort((a,b)=> a.section_order-b.section_order || a.item_order-b.item_order);
+  const childrenByParent = {};
+  allItems.filter(i=>i.pack===packKey && i.parent_id).forEach(c=>{
+    (childrenByParent[c.parent_id] = childrenByParent[c.parent_id] || []).push(c);
+  });
+  Object.values(childrenByParent).forEach(arr=>arr.sort((a,b)=>a.item_order-b.item_order));
+
+  const sectionsMap = new Map();
+  parents.forEach(it=>{
+    if(!sectionsMap.has(it.section_order)){
+      sectionsMap.set(it.section_order, { order: it.section_order, title: it.section_title, items: [] });
+    }
+    it.children = childrenByParent[it.id] || [];
+    sectionsMap.get(it.section_order).items.push(it);
+  });
+  return [...sectionsMap.values()].sort((a,b)=>a.order-b.order);
+}
+
+function itemRowHtml(it){
+  const checked = !!it.checked;
+  const noteParts = [];
+  if(it.note) noteParts.push(escapeHtml(it.note));
+  if(it.quantity) noteParts.push('qtd: ' + escapeHtml(it.quantity));
+  const noteHtml = noteParts.length ? ` <span class="item-note">(${noteParts.join(' · ')})</span>` : '';
+  const link = safeLink(it.link);
+  const linkHtml = link ? ` <a class="item-link" href="${escapeHtml(link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">link ↗</a>` : '';
+  const childrenHtml = (it.children && it.children.length)
+    ? `<ul class="subitems">${it.children.map(ch=>itemRowHtml(ch)).join('')}</ul>` : '';
+  return `
+    <li class="item">
+      <div class="item-row" data-id="${it.id}" onclick="onToggleClick('${it.id}')">
+        <div class="check ${checked?'is-checked':''}"></div>
+        <div class="item-text ${checked?'is-checked':''}">${escapeHtml(it.title)}${noteHtml}${linkHtml}</div>
+        <button class="item-edit" onclick="event.stopPropagation(); openEditModal('${it.id}')" aria-label="Editar item">✎</button>
+      </div>
+      ${childrenHtml}
+    </li>`;
+}
+
+function metaValue(packKey, field, fallback){
+  const row = packMeta[packKey];
+  return (row && row[field]) ? row[field] : fallback;
+}
+
+function renderPack(packKey){
+  activePack = packKey;
+  const pack = PACKS[packKey];
+  const a = ACCENTS[pack.accent];
+  document.querySelectorAll('.tag-btn').forEach(b=>b.classList.toggle('is-active', b.dataset.pack===packKey));
+  document.getElementById('masthead').style.background = a.deep;
+  document.documentElement.style.setProperty('--accent', a.base);
+  document.documentElement.style.setProperty('--accent-deep', a.deep);
+  document.documentElement.style.setProperty('--accent-tint', a.tint);
+
+  const sections = buildSections(packKey);
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="pack-info">
+      ${pack.hasMeta ? `
+      <div class="meta-row">
+        <span><b>Sugestão:</b> <span class="meta-value" contenteditable="true" data-meta="${packKey}-sugestao">${escapeHtml(metaValue(packKey,'sugestao','—'))}</span></span>
+        <span><b>Tamanho:</b> <span class="meta-value" contenteditable="true" data-meta="${packKey}-tamanho">${escapeHtml(metaValue(packKey,'tamanho','—'))}</span></span>
+      </div>
+      <p class="meta-hint">Toque no texto acima pra colocar a sua mochila</p>` : ''}
+      <p>${escapeHtml(pack.desc)}</p>
+    </div>
+    ${sections.map(sec=>{
+      const ids = [];
+      sec.items.forEach(it=>{ ids.push(it.id); it.children.forEach(ch=>ids.push(ch.id)); });
+      const checked = ids.filter(id=>{ const it=findItemById(id); return it && it.checked; }).length;
+      return `
+        <details class="section-block" open>
+          <summary>
+            <span class="section-num">${pack.num}.${sec.order+1}</span>
+            <span class="section-title">${escapeHtml(sec.title)}</span>
+            <span class="section-progress ${checked===ids.length && ids.length>0 ?'is-complete':''}" data-section="${packKey}-${sec.order}">${checked}/${ids.length}</span>
+            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          </summary>
+          <ul class="items">
+            ${sec.items.map(it=>itemRowHtml(it)).join('')}
+          </ul>
+          <button class="add-item-btn" onclick="openAddModal('${packKey}', ${JSON.stringify(sec.title)}, ${sec.order})">+ Adicionar item</button>
+        </details>
+      `;
+    }).join('')}
+  `;
+}
+
+function renderCounts(){
+  ['ataque','cargueira','comprar'].forEach(packKey=>{
+    const ids = allItems.filter(i=>i.pack===packKey).map(i=>i.id);
+    const checked = allItems.filter(i=>i.pack===packKey && i.checked).length;
+    const el = document.getElementById('count' + packKey.charAt(0).toUpperCase() + packKey.slice(1));
+    if(el) el.textContent = `${checked}/${ids.length}`;
+  });
+  const total = allItems.length;
+  const checked = allItems.filter(i=>i.checked).length;
+  document.getElementById('overallCount').textContent = `${checked} de ${total}`;
+  document.getElementById('overallFill').style.width = total ? `${(checked/total)*100}%` : '0%';
+}
+
+/* ============================================================
+   TOGGLE CHECK
+   ============================================================ */
+async function onToggleClick(id){
+  const it = findItemById(id);
+  if(!it) return;
+  it.checked = !it.checked;
+  // optimistic DOM update
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if(el){
+    el.querySelector('.check').classList.toggle('is-checked', it.checked);
+    el.querySelector('.item-text').classList.toggle('is-checked', it.checked);
+  }
+  renderCounts();
+  const secEl = document.querySelector(`[data-section="${it.pack}-${it.section_order}"]`);
+  if(secEl){
+    const ids = allItems.filter(i=>i.pack===it.pack && i.section_order===it.section_order).map(i=>i.id);
+    const checkedCount = ids.filter(x=>{ const i=findItemById(x); return i && i.checked; }).length;
+    secEl.textContent = `${checkedCount}/${ids.length}`;
+    secEl.classList.toggle('is-complete', checkedCount===ids.length && ids.length>0);
+  }
+  const { error } = await sb.from('checklist_items').update({ checked: it.checked }).eq('id', id);
+  if(error) console.error(error);
+}
+
+document.querySelectorAll('.tag-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>renderPack(btn.dataset.pack));
+});
+
+/* ============================================================
+   PACK META (sugestão / tamanho) — saved to DB on blur
+   ============================================================ */
+document.getElementById('main').addEventListener('focusout', async (e)=>{
+  if(e.target.classList && e.target.classList.contains('meta-value')){
+    const [packKey, field] = e.target.dataset.meta.split('-');
+    const value = e.target.textContent.trim();
+    const patch = { [field]: value };
+    const { error } = await sb.from('pack_meta').update(patch).eq('user_id', currentUser.id).eq('pack', packKey);
+    if(error) console.error(error);
+    else { packMeta[packKey] = { ...(packMeta[packKey]||{}), ...patch }; }
+  }
+});
+
+/* ============================================================
+   RESET ALL
+   ============================================================ */
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  document.getElementById('confirmOverlay').classList.add('is-visible');
+});
+document.getElementById('confirmCancel').addEventListener('click', ()=>{
+  document.getElementById('confirmOverlay').classList.remove('is-visible');
+});
+document.getElementById('confirmOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='confirmOverlay') document.getElementById('confirmOverlay').classList.remove('is-visible');
+});
+document.getElementById('confirmOk').addEventListener('click', async ()=>{
+  allItems.forEach(i=>i.checked=false);
+  renderPack(activePack);
+  renderCounts();
+  document.getElementById('confirmOverlay').classList.remove('is-visible');
+  const { error } = await sb.from('checklist_items').update({ checked:false }).eq('user_id', currentUser.id);
+  if(error) console.error(error);
+});
+
+/* ============================================================
+   ITEM ADD / EDIT / DELETE MODAL
+   ============================================================ */
+let editingItemId = null;
+let addingContext = null;
+
+function openAddModal(packKey, sectionTitle, sectionOrder){
+  editingItemId = null;
+  addingContext = { pack: packKey, section_title: sectionTitle, section_order: sectionOrder };
+  document.getElementById('itemModalTitle').textContent = 'Novo item';
+  document.getElementById('itemTitle').value = '';
+  document.getElementById('itemNote').value = '';
+  document.getElementById('itemQty').value = '';
+  document.getElementById('itemLink').value = '';
+  document.getElementById('itemModalDelete').style.display = 'none';
+  document.getElementById('itemError').classList.remove('is-visible');
+  document.getElementById('itemModalOverlay').classList.add('is-visible');
+}
+function openEditModal(id){
+  const it = findItemById(id);
+  if(!it) return;
+  editingItemId = id; addingContext = null;
+  document.getElementById('itemModalTitle').textContent = 'Editar item';
+  document.getElementById('itemTitle').value = it.title || '';
+  document.getElementById('itemNote').value = it.note || '';
+  document.getElementById('itemQty').value = it.quantity || '';
+  document.getElementById('itemLink').value = it.link || '';
+  document.getElementById('itemModalDelete').style.display = 'block';
+  document.getElementById('itemError').classList.remove('is-visible');
+  document.getElementById('itemModalOverlay').classList.add('is-visible');
+}
+function closeItemModal(){
+  document.getElementById('itemModalOverlay').classList.remove('is-visible');
+}
+document.getElementById('itemModalCancel').addEventListener('click', closeItemModal);
+document.getElementById('itemModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='itemModalOverlay') closeItemModal();
+});
+
+document.getElementById('itemModalSave').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('itemError');
+  errEl.classList.remove('is-visible');
+  const title = document.getElementById('itemTitle').value.trim();
+  if(!title){ errEl.textContent='Digite um título para o item.'; errEl.classList.add('is-visible'); return; }
+  const note = document.getElementById('itemNote').value.trim() || null;
+  const qty = document.getElementById('itemQty').value.trim() || null;
+  const linkRaw = document.getElementById('itemLink').value.trim();
+  const link = safeLink(linkRaw);
+  if(linkRaw && !link){ errEl.textContent='O link precisa começar com http:// ou https://'; errEl.classList.add('is-visible'); return; }
+
+  const btn = document.getElementById('itemModalSave');
+  btn.disabled = true;
+
+  if(editingItemId){
+    const { error } = await sb.from('checklist_items')
+      .update({ title, note, quantity: qty, link })
+      .eq('id', editingItemId);
+    if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); btn.disabled=false; return; }
+  } else {
+    const siblings = allItems.filter(i=>i.pack===addingContext.pack && i.section_order===addingContext.section_order && !i.parent_id);
+    const nextOrder = siblings.length ? Math.max(...siblings.map(i=>i.item_order))+1 : 0;
+    const { error } = await sb.from('checklist_items').insert({
+      user_id: currentUser.id, pack: addingContext.pack, section_title: addingContext.section_title,
+      section_order: addingContext.section_order, item_order: nextOrder,
+      title, note, quantity: qty, link, checked: false
+    });
+    if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); btn.disabled=false; return; }
+  }
+  btn.disabled = false;
+  closeItemModal();
+  await refreshItemsAndRender();
+});
+
+document.getElementById('itemModalDelete').addEventListener('click', async ()=>{
+  if(!editingItemId) return;
+  if(!window.confirm('Excluir este item? Isso também remove sub-itens dele, se houver.')) return;
+  const { error } = await sb.from('checklist_items').delete().eq('id', editingItemId);
+  if(error){ console.error(error); return; }
+  closeItemModal();
+  await refreshItemsAndRender();
+});
+
+/* ============================================================
+   SETTINGS MODAL
+   ============================================================ */
+document.getElementById('settingsBtn').addEventListener('click', ()=>{
+  document.getElementById('setNome').value = currentProfile.nome_completo || '';
+  document.getElementById('setNumero').value = currentProfile.numero_legendario || '';
+  document.getElementById('setPista').value = currentProfile.pista || '';
+  document.getElementById('setTop').value = currentProfile.primeiro_top || '';
+  document.getElementById('setConsent').checked = !!currentProfile.aceita_contato;
+  document.getElementById('setError').classList.remove('is-visible');
+  document.getElementById('settingsOverlay').classList.add('is-visible');
+});
+document.getElementById('settingsCancel').addEventListener('click', ()=>{
+  document.getElementById('settingsOverlay').classList.remove('is-visible');
+});
+document.getElementById('settingsOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='settingsOverlay') document.getElementById('settingsOverlay').classList.remove('is-visible');
+});
+document.getElementById('settingsSave').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('setError');
+  errEl.classList.remove('is-visible');
+  const nome = document.getElementById('setNome').value.trim();
+  const numero = document.getElementById('setNumero').value.trim().replace(/^#/, '');
+  if(!nome || !numero){
+    errEl.textContent = 'Nome e número de Legendário são obrigatórios.';
+    errEl.classList.add('is-visible');
+    return;
+  }
+  const patch = {
+    nome_completo: nome,
+    numero_legendario: numero,
+    pista: document.getElementById('setPista').value.trim() || null,
+    primeiro_top: document.getElementById('setTop').value.trim() || null,
+    aceita_contato: document.getElementById('setConsent').checked
+  };
+  const btn = document.getElementById('settingsSave');
+  btn.disabled = true;
+  const { error } = await sb.from('profiles').update(patch).eq('id', currentUser.id);
+  btn.disabled = false;
+  if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); return; }
+  currentProfile = { ...currentProfile, ...patch };
+  const num = currentProfile.numero_legendario ? ` #${currentProfile.numero_legendario}` : '';
+  document.getElementById('legendarioTag').textContent = `${currentProfile.nome_completo}${num}`;
+  document.getElementById('settingsOverlay').classList.remove('is-visible');
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+boot();
+</script>
+
+</body>
+</html>
