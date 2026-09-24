@@ -336,7 +336,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
     <p class="lead">Seu cadastro está pronto. Pra liberar sua checklist, é só finalizar o acesso.</p>
 
     <div class="pack-info" style="margin-bottom:18px;">
-      <p style="font-size:20px; font-weight:700; color:var(--ink); margin:0 0 4px;">R$ 19,90 <span style="font-size:13px; font-weight:500; color:var(--ink-soft);">— pagamento único</span></p>
+      <p style="font-size:20px; font-weight:700; color:var(--ink); margin:0 0 4px;" id="paywallPreco">…</p>
       <p style="margin:0;">Acesso vitalício à sua checklist, editável e salva na nuvem.</p>
     </div>
 
@@ -642,6 +642,7 @@ async function afterLogin(user){
   if(!profile.pago){
     document.getElementById('paywallError').classList.remove('is-visible');
     showScreen('screenPaywall');
+    loadPaywallPrice();
     return;
   }
   await loadAppData();
@@ -654,6 +655,17 @@ async function afterLogin(user){
    PAYWALL
    ============================================================ */
 document.getElementById('paywallLogout').addEventListener('click', logout);
+
+async function loadPaywallPrice(){
+  const el = document.getElementById('paywallPreco');
+  const { data, error } = await sb.from('app_config').select('preco_centavos, preco_original_centavos').eq('id', true).maybeSingle();
+  if(error || !data){ el.textContent = 'Erro ao carregar o preço'; return; }
+  const reais = (data.preco_centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  const riscadoHtml = (data.preco_original_centavos && data.preco_original_centavos > data.preco_centavos)
+    ? `<s style="font-weight:500; font-size:15px; color:var(--ink-soft); margin-right:6px;">R$ ${(data.preco_original_centavos/100).toLocaleString('pt-BR',{minimumFractionDigits:2})}</s>`
+    : '';
+  el.innerHTML = `${riscadoHtml}R$ ${reais} <span style="font-size:13px; font-weight:500; color:var(--ink-soft);">— pagamento único</span>`;
+}
 
 document.getElementById('paywallVerificar').addEventListener('click', async ()=>{
   await afterLogin(currentUser);
