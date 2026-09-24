@@ -329,6 +329,30 @@ main{ padding:16px 22px 0; background:var(--canvas); }
   </div>
 </div>
 
+<!-- ===================== PAYWALL ===================== -->
+<div class="cadastro-wrap" id="screenPaywall" style="display:none">
+  <div class="cadastro-card">
+    <h1>Falta pouco!</h1>
+    <p class="lead">Seu cadastro está pronto. Pra liberar sua checklist, é só finalizar o acesso.</p>
+
+    <div class="pack-info" style="margin-bottom:18px;">
+      <p style="font-size:20px; font-weight:700; color:var(--ink); margin:0 0 4px;">R$ 19,90 <span style="font-size:13px; font-weight:500; color:var(--ink-soft);">— pagamento único</span></p>
+      <p style="margin:0;">Acesso vitalício à sua checklist, editável e salva na nuvem.</p>
+    </div>
+
+    <div class="form-field">
+      <label>Tem um cupom?</label>
+      <input id="paywallCupom" type="text" maxlength="30" placeholder="Ex: AMIGO50" style="text-transform:uppercase;">
+    </div>
+
+    <p class="field-error" id="paywallError"></p>
+
+    <button class="modal-btn modal-ok primary" id="paywallPagar" style="width:100%;margin-top:6px;">Pagar com Mercado Pago</button>
+    <button class="text-btn muted" id="paywallVerificar">Já paguei — verificar novamente</button>
+    <button class="text-btn muted" id="paywallLogout">Sair / trocar de conta</button>
+  </div>
+</div>
+
 <!-- ===================== APP ===================== -->
 <div class="page" id="screenApp" style="display:none">
 
@@ -568,7 +592,7 @@ function enforceDigitsOnly(el){
 enforceDigitsOnly(document.getElementById('cadTop'));
 enforceDigitsOnly(document.getElementById('setTop'));
 function showScreen(name){
-  ['screenLoading','screenLogin','screenCadastro','screenApp'].forEach(id=>{
+  ['screenLoading','screenLogin','screenCadastro','screenPaywall','screenApp'].forEach(id=>{
     document.getElementById(id).style.display = (id===name) ? (name==='screenApp'?'block':'flex') : 'none';
   });
 }
@@ -615,11 +639,72 @@ async function afterLogin(user){
     return;
   }
   currentProfile = profile;
+  if(!profile.pago){
+    document.getElementById('paywallError').classList.remove('is-visible');
+    showScreen('screenPaywall');
+    return;
+  }
   await loadAppData();
   showScreen('screenApp');
   renderPack('ataque');
   renderCounts();
 }
+
+/* ============================================================
+   PAYWALL
+   ============================================================ */
+document.getElementById('paywallLogout').addEventListener('click', logout);
+
+document.getElementById('paywallVerificar').addEventListener('click', async ()=>{
+  await afterLogin(currentUser);
+});
+
+document.getElementById('paywallPagar').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('paywallError');
+  errEl.classList.remove('is-visible');
+  const btn = document.getElementById('paywallPagar');
+  btn.disabled = true; btn.textContent = 'Processando…';
+
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    const codigoCupom = document.getElementById('paywallCupom').value.trim();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-preference`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ codigoCupom }),
+    });
+    const data = await res.json();
+
+    if(!res.ok){
+      errEl.textContent = data.error || 'Não foi possível processar. Tente de novo.';
+      errEl.classList.add('is-visible');
+      btn.disabled = false; btn.textContent = 'Pagar com Mercado Pago';
+      return;
+    }
+
+    if(data.already_paid || data.free){
+      await afterLogin(currentUser);
+      return;
+    }
+
+    if(data.init_point){
+      window.location.href = data.init_point;
+      return;
+    }
+
+    errEl.textContent = 'Resposta inesperada do servidor.';
+    errEl.classList.add('is-visible');
+  } catch(e){
+    console.error(e);
+    errEl.textContent = 'Erro de conexão. Tente de novo.';
+    errEl.classList.add('is-visible');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Pagar com Mercado Pago';
+  }
+});
 
 /* ============================================================
    CADASTRO
