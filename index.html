@@ -314,7 +314,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
     </div>
     <div class="form-field">
       <label>1º TOP <span style="font-weight:400">(qual foi seu TOP de Senderista?)</span></label>
-      <input id="cadTop" type="text" maxlength="80" placeholder="Ex: TOP 45">
+      <input id="cadTop" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ex: 45">
     </div>
 
     <div class="form-check">
@@ -425,7 +425,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
     <div class="form-field"><label>Nome completo</label><input id="setNome" type="text" maxlength="120"></div>
     <div class="form-field"><label>Nº de Legendário</label><input id="setNumero" type="text" maxlength="20"></div>
     <div class="form-field"><label>Pista</label><input id="setPista" type="text" maxlength="80" placeholder="Ex: Superação"></div>
-    <div class="form-field"><label>1º TOP</label><input id="setTop" type="text" maxlength="80"></div>
+    <div class="form-field"><label>1º TOP</label><input id="setTop" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ex: 45"></div>
     <div class="form-check">
       <input type="checkbox" id="setConsent">
       <p>Aceito receber novidades sobre os projetos do André por e-mail.</p>
@@ -559,6 +559,14 @@ function safeLink(url){
   if(/^https?:\/\//i.test(u)) return u;
   return null;
 }
+function enforceDigitsOnly(el){
+  el.addEventListener('input', ()=>{
+    const digits = el.value.replace(/\D+/g, '');
+    if(digits !== el.value) el.value = digits;
+  });
+}
+enforceDigitsOnly(document.getElementById('cadTop'));
+enforceDigitsOnly(document.getElementById('setTop'));
 function showScreen(name){
   ['screenLoading','screenLogin','screenCadastro','screenApp'].forEach(id=>{
     document.getElementById(id).style.display = (id===name) ? (name==='screenApp'?'block':'flex') : 'none';
