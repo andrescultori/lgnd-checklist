@@ -21,6 +21,16 @@ body{
   padding-bottom:60px;
 }
 .page{ max-width:960px; margin:0 auto; padding:0 20px; }
+body{ overflow-x:hidden; }
+.table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table{ min-width:560px; }
+#tabelaUsuarios{ min-width:760px; }
+.filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:14px; }
+.filters .field{ display:flex; flex-direction:column; gap:4px; }
+.filters label{ font-size:11.5px; font-weight:600; color:var(--ink-soft); }
+.filters select{ padding:8px 9px; border-radius:7px; border:1.5px solid var(--line); background:var(--canvas); font-family:inherit; font-size:13px; min-width:140px; }
+.sort-btn{ display:inline-flex; align-items:center; gap:4px; cursor:pointer; user-select:none; }
+.sort-btn .arrow{ font-size:11px; opacity:.6; }
 .gate{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 22px; background:var(--forest-deep); color:var(--paper); text-align:center; }
 .gate h1{ font-size:26px; margin:0 0 10px; font-family:'Bitter', serif; }
 .gate p{ opacity:.85; max-width:34ch; margin:0 0 24px; }
@@ -104,18 +114,41 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
         <button class="btn primary" id="criarCupomBtn">Criar cupom</button>
       </div>
       <p class="msg" id="cupomMsg"></p>
-      <table id="tabelaCupons">
-        <thead><tr><th>Código</th><th>%</th><th>Usos</th><th>Status</th><th>Ações</th></tr></thead>
-        <tbody><tr><td colspan="5" class="loading">Carregando…</td></tr></tbody>
-      </table>
+      <div class="table-scroll">
+        <table id="tabelaCupons">
+          <thead><tr><th>Código</th><th>%</th><th>Usos</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody><tr><td colspan="5" class="loading">Carregando…</td></tr></tbody>
+        </table>
+      </div>
     </section>
 
     <section>
       <h2>Usuários</h2>
-      <table id="tabelaUsuarios">
-        <thead><tr><th>Nome</th><th>E-mail</th><th>Pista</th><th>Status</th><th>Valor pago</th><th>Ações</th></tr></thead>
-        <tbody><tr><td colspan="6" class="loading">Carregando…</td></tr></tbody>
-      </table>
+      <div class="filters">
+        <div class="field">
+          <label>Pista</label>
+          <select id="filtroPista"><option value="">Todas</option></select>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="filtroStatus">
+            <option value="">Todos</option>
+            <option value="pago">Pago</option>
+            <option value="pendente">Pendente</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table id="tabelaUsuarios">
+          <thead>
+            <tr>
+              <th><span class="sort-btn" id="sortNomeBtn">Nome <span class="arrow" id="sortNomeArrow">↑</span></span></th>
+              <th>E-mail</th><th>Pista</th><th>Status</th><th>Valor pago</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="6" class="loading">Carregando…</td></tr></tbody>
+        </table>
+      </div>
     </section>
   </div>
 </div>
@@ -253,11 +286,44 @@ async function apagarCupom(id){
   catch(e){ alert(e.message); }
 }
 
+let allUsers = [];
+let sortDir = 'asc';
+
 async function loadUsuarios(){
   const d = await callAdmin('list_users');
+  allUsers = d.users;
+  popularFiltroPista();
+  renderUsuarios();
+}
+
+function popularFiltroPista(){
+  const select = document.getElementById('filtroPista');
+  const atual = select.value;
+  const pistas = [...new Set(allUsers.map(u => (u.pista || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  select.innerHTML = '<option value="">Todas</option>' + pistas.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  if(pistas.includes(atual)) select.value = atual;
+}
+
+function renderUsuarios(){
   const tbody = document.querySelector('#tabelaUsuarios tbody');
-  if(!d.users.length){ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">Nenhum cadastro ainda</td></tr>'; return; }
-  tbody.innerHTML = d.users.map(u => `
+  const filtroPista = document.getElementById('filtroPista').value;
+  const filtroStatus = document.getElementById('filtroStatus').value;
+
+  let lista = allUsers.filter(u => {
+    if(filtroPista && (u.pista || '').trim() !== filtroPista) return false;
+    if(filtroStatus === 'pago' && !u.pago) return false;
+    if(filtroStatus === 'pendente' && u.pago) return false;
+    return true;
+  });
+
+  lista.sort((a,b) => {
+    const cmp = (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR');
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  if(!lista.length){ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">Nenhum usuário encontrado</td></tr>'; return; }
+
+  tbody.innerHTML = lista.map(u => `
     <tr>
       <td>${escapeHtml(u.nome_completo)}</td>
       <td>${escapeHtml(u.email)}</td>
@@ -273,6 +339,14 @@ async function loadUsuarios(){
     </tr>
   `).join('');
 }
+
+document.getElementById('filtroPista').addEventListener('change', renderUsuarios);
+document.getElementById('filtroStatus').addEventListener('change', renderUsuarios);
+document.getElementById('sortNomeBtn').addEventListener('click', ()=>{
+  sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  document.getElementById('sortNomeArrow').textContent = sortDir === 'asc' ? '↑' : '↓';
+  renderUsuarios();
+});
 async function isentarUsuario(id){
   if(!confirm('Liberar acesso gratuito pra este usuário?')) return;
   try{ await callAdmin('isentar_usuario', { userId: id }); await loadUsuarios(); await loadKpis(); }
