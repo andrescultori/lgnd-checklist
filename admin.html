@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Legendários</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@700;800&family=Work+Sans:wght@400;500;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --canvas: #EDE4CF; --canvas-deep: #E1D3B2; --paper: #F6F0E1;
+  --ink: #262420; --ink-soft: #56503f; --line: #C9B993;
+  --forest: #3F4B3A; --forest-deep: #2C3527; --forest-tint: #DFE4D6;
+  --clay: #A6532E; --clay-deep: #7C3D22; --clay-tint: #F0DFCF;
+  --steel: #3D6B72; --steel-deep: #294A50; --steel-tint: #DCE7E7;
+}
+*{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--canvas); color:var(--ink);
+  font-family:'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding-bottom:60px;
+}
+.page{ max-width:960px; margin:0 auto; padding:0 20px; }
+.gate{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 22px; background:var(--forest-deep); color:var(--paper); text-align:center; }
+.gate h1{ font-size:26px; margin:0 0 10px; font-family:'Bitter', serif; }
+.gate p{ opacity:.85; max-width:34ch; margin:0 0 24px; }
+.google-btn{ display:flex; align-items:center; gap:10px; background:var(--paper); color:var(--ink); border:none; border-radius:10px; padding:12px 20px; font-family:'Work Sans', sans-serif; font-weight:600; font-size:14px; cursor:pointer; }
+h1,h2,h3{ font-family:'Bitter', Georgia, serif; }
+header.top{ background:var(--forest-deep); color:var(--paper); padding:22px 20px; margin-bottom:24px; }
+header.top .page{ display:flex; justify-content:space-between; align-items:center; }
+header.top h1{ font-size:22px; margin:0; }
+.logout-btn{ background:rgba(246,240,225,.14); border:1px solid rgba(246,240,225,.4); color:var(--paper); font-family:inherit; font-size:12.5px; padding:7px 12px; border-radius:7px; cursor:pointer; }
+.kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin-bottom:28px; }
+.kpi{ background:var(--paper); border-radius:10px; padding:16px; border-left:4px solid var(--forest); }
+.kpi .num{ font-size:26px; font-weight:800; font-family:'Bitter', serif; }
+.kpi .label{ font-size:12.5px; color:var(--ink-soft); }
+section{ background:var(--paper); border-radius:12px; padding:18px 20px; margin-bottom:20px; }
+section h2{ font-size:17px; margin:0 0 14px; }
+table{ width:100%; border-collapse:collapse; font-size:13px; }
+th{ text-align:left; padding:8px 6px; border-bottom:2px solid var(--line); color:var(--ink-soft); font-weight:600; font-size:12px; }
+td{ padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:middle; }
+tr:last-child td{ border-bottom:none; }
+.badge{ display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+.badge.pago{ background:var(--forest-tint); color:var(--forest-deep); }
+.badge.pendente{ background:var(--clay-tint); color:var(--clay-deep); }
+.row-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+button.btn{ font-family:'Work Sans', sans-serif; font-size:12px; font-weight:600; padding:6px 10px; border-radius:6px; border:1.5px solid var(--line); background:var(--canvas); color:var(--ink); cursor:pointer; }
+button.btn:hover{ border-color:var(--forest); }
+button.btn.danger{ border-color:var(--clay); color:var(--clay-deep); }
+button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-deep); color:var(--paper); }
+.form-inline{ display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px; }
+.form-inline .field{ display:flex; flex-direction:column; gap:4px; }
+.form-inline label{ font-size:11.5px; font-weight:600; color:var(--ink-soft); }
+.form-inline input{ padding:8px 9px; border-radius:7px; border:1.5px solid var(--line); background:var(--canvas); font-family:inherit; font-size:13px; width:110px; }
+.msg{ font-size:12.5px; margin-top:8px; }
+.msg.error{ color:var(--clay-deep); }
+.msg.success{ color:var(--forest-deep); }
+.loading{ padding:30px; text-align:center; color:var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<div class="gate" id="screenLogin">
+  <h1>Painel Admin — Legendários</h1>
+  <p>Acesso restrito. Entre com a conta Google autorizada.</p>
+  <button class="google-btn" id="loginBtn">Entrar com Google</button>
+  <p class="msg error" id="loginError"></p>
+</div>
+
+<div class="gate" id="screenLoading" style="display:none"><p>Carregando…</p></div>
+<div class="gate" id="screenDenied" style="display:none">
+  <h1>Acesso negado</h1>
+  <p>Essa conta não tem permissão pra ver este painel.</p>
+  <button class="logout-btn" id="deniedLogout">Sair</button>
+</div>
+
+<div id="screenAdmin" style="display:none">
+  <header class="top">
+    <div class="page">
+      <h1>Painel — Legendários</h1>
+      <button class="logout-btn" id="logoutBtn">Sair</button>
+    </div>
+  </header>
+
+  <div class="page">
+    <div class="kpis" id="kpis"><div class="loading">Carregando KPIs…</div></div>
+
+    <section>
+      <h2>Preço do acesso</h2>
+      <div class="form-inline">
+        <div class="field"><label>Valor (R$)</label><input id="precoInput" type="number" step="0.01" min="0"></div>
+        <button class="btn primary" id="salvarPrecoBtn">Salvar preço</button>
+      </div>
+      <p class="msg" id="precoMsg"></p>
+    </section>
+
+    <section>
+      <h2>Cupons</h2>
+      <div class="form-inline">
+        <div class="field"><label>Código</label><input id="cupomCodigo" type="text" style="text-transform:uppercase; width:140px;"></div>
+        <div class="field"><label>% desconto</label><input id="cupomPercentual" type="number" min="1" max="100" value="100"></div>
+        <div class="field"><label>Usos máx. (vazio=∞)</label><input id="cupomUsosMax" type="number" min="1"></div>
+        <div class="field"><label>Expira em</label><input id="cupomExpira" type="date"></div>
+        <button class="btn primary" id="criarCupomBtn">Criar cupom</button>
+      </div>
+      <p class="msg" id="cupomMsg"></p>
+      <table id="tabelaCupons">
+        <thead><tr><th>Código</th><th>%</th><th>Usos</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody><tr><td colspan="5" class="loading">Carregando…</td></tr></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Usuários</h2>
+      <table id="tabelaUsuarios">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Pista</th><th>Status</th><th>Valor pago</th><th>Ações</th></tr></thead>
+        <tbody><tr><td colspan="6" class="loading">Carregando…</td></tr></tbody>
+      </table>
+    </section>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://rbtcgurgjoounqwokygj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGNndXJnam9vdW5xd29reWdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MTM0NjYsImV4cCI6MjEwNTA4OTQ2Nn0.66RTBQ9_eWQcP6L8wJief64ryvg2vCq280mZRTfXY44';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function fmtBRL(centavos){
+  return (centavos/100).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+}
+function showScreen(id){
+  ['screenLogin','screenLoading','screenDenied','screenAdmin'].forEach(s=>{
+    document.getElementById(s).style.display = (s===id) ? (s==='screenAdmin'?'block':'flex') : 'none';
+  });
+}
+
+async function callAdmin(action, extra){
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-api`, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${session.access_token}` },
+    body: JSON.stringify({ action, ...extra }),
+  });
+  const data = await res.json();
+  if(!res.ok){ throw new Error(data.error || 'Erro desconhecido'); }
+  return data;
+}
+
+document.getElementById('loginBtn').addEventListener('click', async ()=>{
+  document.getElementById('loginError').textContent = '';
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if(error){ document.getElementById('loginError').textContent = 'Erro: ' + error.message; }
+});
+document.getElementById('logoutBtn').addEventListener('click', ()=> sb.auth.signOut());
+document.getElementById('deniedLogout').addEventListener('click', ()=> sb.auth.signOut());
+
+sb.auth.onAuthStateChange((event, session)=>{
+  if(event === 'SIGNED_IN' && session){ boot(); }
+  if(event === 'SIGNED_OUT'){ showScreen('screenLogin'); }
+});
+
+async function boot(){
+  showScreen('screenLoading');
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ showScreen('screenLogin'); return; }
+  try{
+    await loadAll();
+    showScreen('screenAdmin');
+  } catch(e){
+    if(String(e.message).includes('Acesso negado')){ showScreen('screenDenied'); }
+    else { document.getElementById('loginError').textContent = e.message; showScreen('screenLogin'); }
+  }
+}
+
+async function loadAll(){
+  await Promise.all([loadKpis(), loadPreco(), loadCupons(), loadUsuarios()]);
+}
+
+async function loadKpis(){
+  const d = await callAdmin('kpis');
+  const pistasHtml = d.listaPistas.map(p=>`<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0;"><span>${escapeHtml(p.pista)}</span><span>${p.qtd}</span></div>`).join('');
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="num">${fmtBRL(d.totalRecebidoCentavos)}</div><div class="label">Total recebido</div></div>
+    <div class="kpi"><div class="num">${d.totalCadastrados}</div><div class="label">Cadastrados</div></div>
+    <div class="kpi"><div class="num">${d.totalPagos}</div><div class="label">Com acesso liberado</div></div>
+    <div class="kpi" style="border-left-color:var(--steel);"><div class="label" style="margin-bottom:6px;">Pistas cadastradas</div>${pistasHtml || '<span style="font-size:12px;color:var(--ink-soft);">Nenhuma ainda</span>'}</div>
+  `;
+}
+
+async function loadPreco(){
+  const d = await callAdmin('get_price');
+  document.getElementById('precoInput').value = d.preco_centavos != null ? (d.preco_centavos/100).toFixed(2) : '';
+}
+document.getElementById('salvarPrecoBtn').addEventListener('click', async ()=>{
+  const msg = document.getElementById('precoMsg');
+  msg.textContent = ''; msg.className = 'msg';
+  const reais = parseFloat(document.getElementById('precoInput').value);
+  if(!reais || reais <= 0){ msg.textContent = 'Valor inválido.'; msg.className = 'msg error'; return; }
+  try{
+    await callAdmin('update_price', { preco_centavos: Math.round(reais*100) });
+    msg.textContent = 'Preço atualizado!'; msg.className = 'msg success';
+    await loadPreco();
+  } catch(e){ msg.textContent = e.message; msg.className = 'msg error'; }
+});
+
+async function loadCupons(){
+  const d = await callAdmin('list_coupons');
+  const tbody = document.querySelector('#tabelaCupons tbody');
+  if(!d.coupons.length){ tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">Nenhum cupom ainda</td></tr>'; return; }
+  tbody.innerHTML = d.coupons.map(c => `
+    <tr>
+      <td><b>${escapeHtml(c.codigo)}</b></td>
+      <td>${c.percentual_desconto}%</td>
+      <td>${c.usos_atual}${c.usos_maximos != null ? ' / ' + c.usos_maximos : ' / ∞'}</td>
+      <td><span class="badge ${c.ativo ? 'pago' : 'pendente'}">${c.ativo ? 'Ativo' : 'Inativo'}</span></td>
+      <td class="row-actions">
+        <button class="btn" onclick="toggleCupom('${c.id}', ${!c.ativo})">${c.ativo ? 'Desativar' : 'Ativar'}</button>
+        <button class="btn danger" onclick="apagarCupom('${c.id}')">Apagar</button>
+      </td>
+    </tr>
+  `).join('');
+}
+document.getElementById('criarCupomBtn').addEventListener('click', async ()=>{
+  const msg = document.getElementById('cupomMsg');
+  msg.textContent = ''; msg.className = 'msg';
+  const codigo = document.getElementById('cupomCodigo').value.trim().toUpperCase();
+  const percentual = parseInt(document.getElementById('cupomPercentual').value, 10);
+  const usosMax = document.getElementById('cupomUsosMax').value;
+  const expira = document.getElementById('cupomExpira').value;
+  try{
+    await callAdmin('create_coupon', {
+      codigo, percentual_desconto: percentual,
+      usos_maximos: usosMax ? parseInt(usosMax,10) : null,
+      expira_em: expira ? new Date(expira).toISOString() : null,
+    });
+    msg.textContent = 'Cupom criado!'; msg.className = 'msg success';
+    document.getElementById('cupomCodigo').value = '';
+    document.getElementById('cupomUsosMax').value = '';
+    document.getElementById('cupomExpira').value = '';
+    await loadCupons();
+  } catch(e){ msg.textContent = e.message; msg.className = 'msg error'; }
+});
+async function toggleCupom(id, ativo){
+  try{ await callAdmin('toggle_coupon', { id, ativo }); await loadCupons(); }
+  catch(e){ alert(e.message); }
+}
+async function apagarCupom(id){
+  if(!confirm('Apagar este cupom? Não afeta quem já usou.')) return;
+  try{ await callAdmin('delete_coupon', { id }); await loadCupons(); }
+  catch(e){ alert(e.message); }
+}
+
+async function loadUsuarios(){
+  const d = await callAdmin('list_users');
+  const tbody = document.querySelector('#tabelaUsuarios tbody');
+  if(!d.users.length){ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">Nenhum cadastro ainda</td></tr>'; return; }
+  tbody.innerHTML = d.users.map(u => `
+    <tr>
+      <td>${escapeHtml(u.nome_completo)}</td>
+      <td>${escapeHtml(u.email)}</td>
+      <td>${escapeHtml(u.pista || '—')}</td>
+      <td><span class="badge ${u.pago ? 'pago' : 'pendente'}">${u.pago ? 'Pago' : 'Pendente'}</span></td>
+      <td>${u.valor_pago_centavos != null ? fmtBRL(u.valor_pago_centavos) : '—'}${u.cupom_usado ? ' <span style="color:var(--ink-soft);font-size:11px;">(' + escapeHtml(u.cupom_usado) + ')</span>' : ''}</td>
+      <td class="row-actions">
+        ${u.pago
+          ? `<button class="btn" onclick="revogarAcesso('${u.id}')">Revogar</button>`
+          : `<button class="btn primary" onclick="isentarUsuario('${u.id}')">Isentar</button>`}
+        <button class="btn danger" onclick="apagarUsuario('${u.id}', '${escapeHtml(u.email)}')">Apagar</button>
+      </td>
+    </tr>
+  `).join('');
+}
+async function isentarUsuario(id){
+  if(!confirm('Liberar acesso gratuito pra este usuário?')) return;
+  try{ await callAdmin('isentar_usuario', { userId: id }); await loadUsuarios(); await loadKpis(); }
+  catch(e){ alert(e.message); }
+}
+async function revogarAcesso(id){
+  if(!confirm('Revogar o acesso pago deste usuário?')) return;
+  try{ await callAdmin('revogar_acesso', { userId: id }); await loadUsuarios(); await loadKpis(); }
+  catch(e){ alert(e.message); }
+}
+async function apagarUsuario(id, email){
+  if(!confirm(`Apagar ${email} por completo? Isso remove o login e todos os dados dele. Não tem como desfazer.`)) return;
+  try{ await callAdmin('delete_user', { userId: id }); await loadUsuarios(); await loadKpis(); }
+  catch(e){ alert(e.message); }
+}
+
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+(async function init(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){ boot(); } else { showScreen('screenLogin'); }
+})();
+</script>
+</body>
+</html>
