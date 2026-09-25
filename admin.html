@@ -118,8 +118,8 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
       <p class="msg" id="cupomMsg"></p>
       <div class="table-scroll">
         <table id="tabelaCupons">
-          <thead><tr><th>Código</th><th>%</th><th>Usos</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody><tr><td colspan="5" class="loading">Carregando…</td></tr></tbody>
+          <thead><tr><th>Código</th><th>%</th><th>Usos</th><th>Usos máx.</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody><tr><td colspan="6" class="loading">Carregando…</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -145,10 +145,11 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
           <thead>
             <tr>
               <th><span class="sort-btn" id="sortNomeBtn">Nome <span class="arrow" id="sortNomeArrow">↑</span></span></th>
+              <th><span class="sort-btn" id="sortNumeroBtn">Nº Legendário <span class="arrow" id="sortNumeroArrow"></span></span></th>
               <th>E-mail</th><th>Pista</th><th>Status</th><th>Valor pago</th><th>Ações</th>
             </tr>
           </thead>
-          <tbody><tr><td colspan="6" class="loading">Carregando…</td></tr></tbody>
+          <tbody><tr><td colspan="7" class="loading">Carregando…</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -250,12 +251,16 @@ document.getElementById('salvarPrecoBtn').addEventListener('click', async ()=>{
 async function loadCupons(){
   const d = await callAdmin('list_coupons');
   const tbody = document.querySelector('#tabelaCupons tbody');
-  if(!d.coupons.length){ tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">Nenhum cupom ainda</td></tr>'; return; }
+  if(!d.coupons.length){ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">Nenhum cupom ainda</td></tr>'; return; }
   tbody.innerHTML = d.coupons.map(c => `
     <tr>
       <td><b>${escapeHtml(c.codigo)}</b></td>
       <td>${c.percentual_desconto}%</td>
-      <td>${c.usos_atual}${c.usos_maximos != null ? ' / ' + c.usos_maximos : ' / ∞'}</td>
+      <td>${c.usos_atual}</td>
+      <td>
+        <input type="number" min="1" class="cupom-usos-input" data-id="${c.id}" value="${c.usos_maximos ?? ''}" placeholder="∞" style="width:64px; padding:5px 7px; border-radius:6px; border:1.5px solid var(--line); background:var(--canvas); font-family:inherit; font-size:12.5px;">
+        <button class="btn" style="padding:5px 8px;" onclick="salvarUsosMaximos('${c.id}')">Salvar</button>
+      </td>
       <td><span class="badge ${c.ativo ? 'pago' : 'pendente'}">${c.ativo ? 'Ativo' : 'Inativo'}</span></td>
       <td class="row-actions">
         <button class="btn" onclick="toggleCupom('${c.id}', ${!c.ativo})">${c.ativo ? 'Desativar' : 'Ativar'}</button>
@@ -263,6 +268,14 @@ async function loadCupons(){
       </td>
     </tr>
   `).join('');
+}
+async function salvarUsosMaximos(id){
+  const input = document.querySelector(`.cupom-usos-input[data-id="${id}"]`);
+  const raw = input.value.trim();
+  const usosMaximos = raw ? parseInt(raw, 10) : null;
+  if(raw && (!usosMaximos || usosMaximos < 1)){ alert('Usos máximos inválido.'); return; }
+  try{ await callAdmin('update_coupon', { id, usos_maximos: usosMaximos }); await loadCupons(); }
+  catch(e){ alert(e.message); }
 }
 document.getElementById('criarCupomBtn').addEventListener('click', async ()=>{
   const msg = document.getElementById('cupomMsg');
@@ -295,6 +308,7 @@ async function apagarCupom(id){
 }
 
 let allUsers = [];
+let sortField = 'nome_completo';
 let sortDir = 'asc';
 
 async function loadUsuarios(){
@@ -325,15 +339,16 @@ function renderUsuarios(){
   });
 
   lista.sort((a,b) => {
-    const cmp = (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR');
+    const cmp = compararUsuarios(a, b, sortField);
     return sortDir === 'asc' ? cmp : -cmp;
   });
 
-  if(!lista.length){ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">Nenhum usuário encontrado</td></tr>'; return; }
+  if(!lista.length){ tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">Nenhum usuário encontrado</td></tr>'; return; }
 
   tbody.innerHTML = lista.map(u => `
     <tr>
       <td>${escapeHtml(u.nome_completo)}</td>
+      <td>${escapeHtml(u.numero_legendario || '—')}</td>
       <td>${escapeHtml(u.email)}</td>
       <td>${escapeHtml(u.pista || '—')}</td>
       <td><span class="badge ${u.pago ? 'pago' : 'pendente'}">${u.pago ? 'Pago' : 'Pendente'}</span></td>
@@ -348,13 +363,30 @@ function renderUsuarios(){
   `).join('');
 }
 
+function compararUsuarios(a, b, field){
+  if(field === 'numero_legendario'){
+    const na = parseInt(a.numero_legendario, 10);
+    const nb = parseInt(b.numero_legendario, 10);
+    const va = Number.isNaN(na) ? Infinity : na;
+    const vb = Number.isNaN(nb) ? Infinity : nb;
+    if(va !== vb) return va - vb;
+    return (a.numero_legendario || '').localeCompare(b.numero_legendario || '', 'pt-BR');
+  }
+  return (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR');
+}
+
+function ordenarPor(field){
+  if(sortField === field){ sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+  else { sortField = field; sortDir = 'asc'; }
+  document.getElementById('sortNomeArrow').textContent = sortField === 'nome_completo' ? (sortDir === 'asc' ? '↑' : '↓') : '';
+  document.getElementById('sortNumeroArrow').textContent = sortField === 'numero_legendario' ? (sortDir === 'asc' ? '↑' : '↓') : '';
+  renderUsuarios();
+}
+
 document.getElementById('filtroPista').addEventListener('change', renderUsuarios);
 document.getElementById('filtroStatus').addEventListener('change', renderUsuarios);
-document.getElementById('sortNomeBtn').addEventListener('click', ()=>{
-  sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-  document.getElementById('sortNomeArrow').textContent = sortDir === 'asc' ? '↑' : '↓';
-  renderUsuarios();
-});
+document.getElementById('sortNomeBtn').addEventListener('click', ()=> ordenarPor('nome_completo'));
+document.getElementById('sortNumeroBtn').addEventListener('click', ()=> ordenarPor('numero_legendario'));
 async function isentarUsuario(id){
   if(!confirm('Liberar acesso gratuito pra este usuário?')) return;
   try{ await callAdmin('isentar_usuario', { userId: id }); await loadUsuarios(); await loadKpis(); }
