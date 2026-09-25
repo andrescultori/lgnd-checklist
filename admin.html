@@ -234,10 +234,11 @@ async function loadPreco(){
 document.getElementById('salvarPrecoBtn').addEventListener('click', async ()=>{
   const msg = document.getElementById('precoMsg');
   msg.textContent = ''; msg.className = 'msg';
-  const reais = parseFloat(document.getElementById('precoInput').value);
+  const precoRaw = document.getElementById('precoInput').value;
+  const reais = parseFloat(precoRaw);
   const originalRaw = document.getElementById('precoOriginalInput').value;
   const originalReais = originalRaw ? parseFloat(originalRaw) : null;
-  if(!reais || reais <= 0){ msg.textContent = 'Valor inválido.'; msg.className = 'msg error'; return; }
+  if(precoRaw === '' || isNaN(reais) || reais < 0){ msg.textContent = 'Valor inválido.'; msg.className = 'msg error'; return; }
   try{
     await callAdmin('update_price', {
       preco_centavos: Math.round(reais*100),
