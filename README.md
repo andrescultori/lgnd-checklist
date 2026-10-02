@@ -4,7 +4,7 @@
 
 Checklist de equipamentos de trilha, salva na nuvem e sempre à mão — sem mais lista de papel se perdendo entre a mochila de ataque e a cargueira.
 
-App web para os membros do grupo de trekking **Legendários** organizarem o que levar nas duas mochilas da trilha (ataque e cargueira) e o que ainda falta comprar, com progresso salvo por usuário e sincronizado em tempo real.
+App web **gratuito** para os membros do grupo de trekking **Legendários** organizarem o que levar nas duas mochilas da trilha (ataque e cargueira) e o que ainda falta comprar, com progresso salvo por usuário na nuvem.
 
 > Este é o app real usado pelo grupo em produção — o login é feito com conta Google de verdade e os dados ficam no banco real dos Legendários. Não há um modo demo separado; as capturas de tela abaixo mostram a interface funcionando com uma conta real (a minha).
 
@@ -23,7 +23,7 @@ Perfil criado no Supabase (nome, nº de Legendário, pista, 1º TOP)
       ↓
 Checklist padrão semeada automaticamente (3 packs, seções, itens e subitens)
       ↓
-Progresso marcado item a item, sincronizado em tempo real na nuvem
+Progresso marcado item a item, salvo automaticamente na nuvem
 ```
 
 O resultado: cada Legendário abre o app, vê exatamente o que falta separar em cada mochila, e pode ajustar a lista (adicionar, editar, remover itens) sem afetar a lista de mais ninguém.
@@ -36,7 +36,7 @@ O resultado: cada Legendário abre o app, vê exatamente o que falta separar em 
 - **Notas, quantidade e link opcional** por item (ex: modelo sugerido, link de compra)
 - **Edição inline da sugestão e do tamanho de mochila** direto no texto, sem precisar abrir modal
 - **Adicionar, editar e excluir itens** em qualquer seção, a qualquer momento
-- **Barra de progresso geral** e por pack, atualizada em tempo real a cada item marcado
+- **Barra de progresso geral** e por pack, atualizada na hora a cada item marcado
 - **"Zerar tudo"** com confirmação, para reiniciar a checklist antes de uma nova trilha
 
 ![Checklist da mochila de ataque](screenshots/02-checklist-ataque.jpg)
@@ -49,7 +49,7 @@ O resultado: cada Legendário abre o app, vê exatamente o que falta separar em 
 | Camada | Tecnologia |
 |---|---|
 | Frontend | HTML, CSS e JavaScript puros — sem framework, sem build |
-| Backend / dados | [Supabase](https://supabase.com) (Postgres + Realtime) |
+| Backend / dados | [Supabase](https://supabase.com) (Postgres) |
 | Autenticação | Supabase Auth com login via Google OAuth |
 | Tipografia | Google Fonts (Bitter + Work Sans) |
 
