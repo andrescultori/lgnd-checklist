@@ -4,7 +4,7 @@
 
 A trekking gear checklist, saved to the cloud and always within reach — no more paper lists getting lost between the daypack and the cargo bag.
 
-A web app for members of the **Legendários** trekking group to organize what to pack in their two trail bags (attack pack and cargo pack) and what's still left to buy, with progress saved per user and synced in real time.
+A **free** web app for members of the **Legendários** trekking group to organize what to pack in their two trail bags (attack pack and cargo pack) and what's still left to buy, with progress saved per user to the cloud.
 
 > This is the actual app used by the group in production — login is done with a real Google account, and data lives in the group's real database. There's no separate demo mode; the screenshots below show the interface running with a real account (mine).
 
@@ -23,7 +23,7 @@ Profile created in Supabase (name, member number, trail, first TOP)
       ↓
 Default checklist auto-seeded (3 packs, sections, items and sub-items)
       ↓
-Progress checked item by item, synced in real time to the cloud
+Progress checked item by item, saved automatically to the cloud
 ```
 
 The result: every member opens the app and sees exactly what's left to pack in each bag, and can adjust the list (add, edit, remove items) without touching anyone else's.
@@ -36,7 +36,7 @@ The result: every member opens the app and sees exactly what's left to pack in e
 - **Optional notes, quantity, and link** per item (e.g. suggested model, purchase link)
 - **Inline editing of pack suggestion and size** directly in the text, no modal needed
 - **Add, edit, and delete items** in any section, at any time
-- **Overall and per-pack progress bar**, updating in real time as items get checked
+- **Overall and per-pack progress bar**, updating instantly as items get checked
 - **"Reset all"** with confirmation, to start fresh before a new trip
 
 ![Daypack checklist](screenshots/02-checklist-ataque.jpg)
@@ -49,7 +49,7 @@ The result: every member opens the app and sees exactly what's left to pack in e
 | Layer | Technology |
 |---|---|
 | Frontend | Plain HTML, CSS and JavaScript — no framework, no build step |
-| Backend / data | [Supabase](https://supabase.com) (Postgres + Realtime) |
+| Backend / data | [Supabase](https://supabase.com) (Postgres) |
 | Auth | Supabase Auth with Google OAuth login |
 | Typography | Google Fonts (Bitter + Work Sans) |
 
