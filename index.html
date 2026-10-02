@@ -599,6 +599,7 @@ document.getElementById('googleLoginBtn').addEventListener('click', async ()=>{
 });
 
 async function logout(){
+  document.getElementById('settingsOverlay').classList.remove('is-visible');
   await sb.auth.signOut();
 }
 document.getElementById('cadLogout').addEventListener('click', logout);
