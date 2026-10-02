@@ -181,6 +181,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .item-text{ font-size:14.5px; line-height:1.4; color:var(--ink); padding-top:0px; flex:1; }
 .item-text.is-checked{ color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line); text-decoration-thickness:1.5px; }
 .item-note{ font-size:12.5px; color:var(--ink-soft); font-style:italic; }
+.item-lock{ color:var(--ink-soft); opacity:.5; vertical-align:middle; margin-left:2px; }
 .item-link{ font-size:12px; color:var(--accent-deep); margin-left:6px; white-space:nowrap; }
 
 .item-edit{ flex-shrink:0; background:none; border:none; color:var(--ink-soft); opacity:.45; font-size:14px; cursor:pointer; padding:2px 4px; }
@@ -409,6 +410,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
     <div class="form-field"><label>Nota (opcional)</label><input id="itemNote" type="text" maxlength="60" placeholder="Ex: OnNight 100"></div>
     <div class="form-field"><label>Quantidade (opcional)</label><input id="itemQty" type="text" maxlength="30" placeholder="Ex: 2"></div>
     <div class="form-field"><label>Link (opcional)</label><input id="itemLink" type="url" placeholder="https://"></div>
+    <p class="form-hint" id="itemLockedHint" style="display:none">Este é um item obrigatório da checklist — só a quantidade pode ser alterada.</p>
     <p class="field-error" id="itemError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="itemModalCancel">Cancelar</button>
@@ -435,7 +437,20 @@ main{ padding:16px 22px 0; background:var(--canvas); }
       <button class="modal-btn modal-cancel" id="settingsCancel">Cancelar</button>
       <button class="modal-btn modal-ok primary" id="settingsSave">Salvar</button>
     </div>
+    <button class="text-btn danger" id="settingsRefazer">Refazer a lista</button>
     <button class="text-btn muted" id="settingsLogout">Sair da conta</button>
+  </div>
+</div>
+
+<!-- ===================== Confirm refazer lista ===================== -->
+<div class="overlay" id="refazerOverlay">
+  <div class="modal-card">
+    <p class="modal-title">Refazer a lista?</p>
+    <p class="modal-body">Isso apaga todos os itens que você adicionou, editou ou excluiu, e recria a checklist inteira do zero, com os itens padrão. Não há como reverter isso.</p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" id="refazerCancel">Cancelar</button>
+      <button class="modal-btn modal-ok" id="refazerOk">Refazer a lista</button>
+    </div>
   </div>
 </div>
 
@@ -475,50 +490,66 @@ const ACCENTS = {
   steel:  { base:"var(--steel)",  deep:"var(--steel-deep)",  tint:"var(--steel-tint)" },
 };
 
-/* Default template used only to seed a brand-new user's checklist */
+/* Default template used to seed a new user's checklist, and to
+   reseed it via "Refazer a lista". Items marked obrigatorio:true
+   can't be deleted and only their quantity can be edited. */
 const TEMPLATE = {
   ataque: {
-    meta: { sugestao: "Quechua 20l; ou Yepp 18l", tamanho: "20 – 30l" },
+    meta: { sugestao: "Quechua 20l", tamanho: "20 – 30l" },
     sections: [
       { title:"Geral", items:[
-        {t:"Bolsa hidratação"},{t:"Fleece ou blusa de frio"},{t:"Capa de chuva"},
-        {t:"Saco de dormir emergência"},{t:"Meia extra — 1 par"},
-        {t:"Lanterna de cabeça", note:"OnNight 100", children:[{t:"3 pilhas"}]},
-        {t:"Lanterna extra", children:[{t:"3 pilhas"}]},
-        {t:"Balaclava"},{t:"Garrafa extra", note:"isotônico"},{t:"Luvas"},
-        {t:"Capa de mochila"},{t:"Manta térmica"},{t:"Canivete"},
-        {t:"Corta-vento / jaqueta"},{t:"Segunda pele extra"},
+        {t:"Bolsa hidratação", obrigatorio:true},
+        {t:"Capa de chuva", obrigatorio:true},
+        {t:"Lanterna de cabeça", obrigatorio:true},
+        {t:"Lanterna extra", obrigatorio:true},
+        {t:"Balaclava", obrigatorio:true},
+        {t:"Manta térmica", obrigatorio:true},
+        {t:"Corta-vento / jaqueta", obrigatorio:true},
+        {t:"Fleece ou blusa de frio"},
+        {t:"Saco de dormir emergência"},
+        {t:"Meia extra", quantity:"1"},
+        {t:"Garrafa extra", note:"isotônico"},
+        {t:"Luvas"},
+        {t:"Capa de mochila"},
+        {t:"Canivete"},
+        {t:"Segunda pele extra"},
+        {t:"Pilhas extras", quantity:"6"},
       ]},
       { title:"Higiene + Saúde", items:[
-        {t:"Toalhinha"},{t:"Lenço umedecido", note:"pacote pequeno"},
-        {t:"Escova e pasta de dente"},{t:"Desodorante"},{t:"2 sacos plásticos"},{t:"3 ziploc"},
-        {t:"Kit primeiros socorros", children:[{t:"Esparadrapo"},{t:"Álcool-gel"},{t:"Repelente"}]},
+        {t:"Sacos plásticos", quantity:"2"},
+        {t:"Ziploc", quantity:"3"},
+        {t:"Kit primeiros socorros", children:[{t:"Esparadrapo"},{t:"Repelente"}]},
       ]},
       { title:"Comida", items:[
-        {t:"Talheres + prato/pote"},{t:"2 barrinhas de cereal"},{t:"Balinhas"},{t:"Sanduíche p/ primeira manhã"},
+        {t:"Barras de cereal", quantity:"5"},
       ]},
       { title:"Outros", items:[
-        {t:"Documento"},{t:"Propósito de oração"},{t:"Caneta e papel"},{t:"Pilhas extras"},
+        {t:"Documento", obrigatorio:true},
+        {t:"Propósito de oração", obrigatorio:true},
+        {t:"Caneta e papel"},
       ]},
     ]
   },
   cargueira: {
-    meta: { sugestao: "Nord 55l", tamanho: "50 – 60l" },
+    meta: { sugestao: null, tamanho: "50 – 70l" },
     sections: [
       { title:"Geral", items:[
-        {t:"Saco de dormir", note:"NTK Freedom"},{t:"Colchonete inflável"},
-        {t:"Barraca", note:"Quechua, 2 pessoas"},{t:"Cobertor"},{t:"Meias — 4 pares"},{t:"Cueca — 3 a 4"},
+        {t:"Saco de dormir", obrigatorio:true},
+        {t:"Colchonete inflável ou isolante térmico", obrigatorio:true},
+        {t:"Barraca", obrigatorio:true},
+        {t:"Cobertor"},
+        {t:"Meias", quantity:"4"},
+        {t:"Roupa íntima extra"},
         {t:"Toalha"},
-        {t:"Roupa p/ dormir", children:[{t:"Chinelo"}]},
-        {t:"Roupa p/ voltar", children:[{t:"Tênis extra"}]},
-        {t:"5 sacos plásticos", note:"lixo / roupa molhada"},{t:"Segunda pele extra"},
+        {t:"Tênis extra"},
+        {t:"Sacos plásticos", quantity:"5"},
+        {t:"Segunda pele extra"},
       ]},
       { title:"Higiene + Saúde", items:[
-        {t:"Lenço umedecido grande"},{t:"Lenço umedecido pequeno", note:"reserva"},
-        {t:"Shampoo"},{t:"Pomada para assadura"},
+        {t:"Lenço umedecido"},
       ]},
       { title:"Comida", items:[
-        {t:"2 barrinhas de cereal", note:"repor mochila de ataque"},{t:"Prato"},
+        {t:"Barra de cereal"},{t:"Prato"},
       ]},
       { title:"Outros", items:[
         {t:"Bastão de caminhada"},{t:"Perneira"},
@@ -528,8 +559,7 @@ const TEMPLATE = {
   comprar: {
     sections: [
       { title:"Comida", items:[
-        {t:"UFO", note:"2"},{t:"Barrinha de cereal", note:"6"},{t:"Snickers", note:"2"},
-        {t:"Bala", note:"pacote"},{t:"Tang", note:"2"},{t:"Amendoim", note:"2 peq"},
+        {t:"Barra de cereal", quantity:"6"},{t:"Snickers", quantity:"2"},
       ]},
       { title:"Outros", items:[
         {t:"Pilhas"},{t:"Manta térmica"},
@@ -672,7 +702,8 @@ async function seedDefaultItems(userId){
       sec.items.forEach((it, ii)=>{
         parentRows.push({
           user_id:userId, pack:packKey, section_title:sec.title, section_order:si,
-          item_order:ii, title:it.t, note:it.note||null, quantity:null, link:null, checked:false
+          item_order:ii, title:it.t, note:it.note||null, quantity:it.quantity||null, link:null,
+          checked:false, obrigatorio:!!it.obrigatorio
         });
         childrenMap.push(it.children || null);
       });
@@ -737,7 +768,7 @@ async function refreshItemsAndRender(){
    ============================================================ */
 function buildSections(packKey){
   const parents = allItems.filter(i=>i.pack===packKey && !i.parent_id)
-    .sort((a,b)=> a.section_order-b.section_order || a.item_order-b.item_order);
+    .sort((a,b)=> a.section_order-b.section_order || (b.obrigatorio - a.obrigatorio) || a.item_order-b.item_order);
   const childrenByParent = {};
   allItems.filter(i=>i.pack===packKey && i.parent_id).forEach(c=>{
     (childrenByParent[c.parent_id] = childrenByParent[c.parent_id] || []).push(c);
@@ -763,13 +794,16 @@ function itemRowHtml(it){
   const noteHtml = noteParts.length ? ` <span class="item-note">(${noteParts.join(' · ')})</span>` : '';
   const link = safeLink(it.link);
   const linkHtml = link ? ` <a class="item-link" href="${escapeHtml(link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">link ↗</a>` : '';
+  const lockHtml = it.obrigatorio
+    ? ` <svg class="item-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-label="Item obrigatório"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`
+    : '';
   const childrenHtml = (it.children && it.children.length)
     ? `<ul class="subitems">${it.children.map(ch=>itemRowHtml(ch)).join('')}</ul>` : '';
   return `
     <li class="item">
       <div class="item-row" data-id="${it.id}" onclick="onToggleClick('${it.id}')">
         <div class="check ${checked?'is-checked':''}"></div>
-        <div class="item-text ${checked?'is-checked':''}">${escapeHtml(it.title)}${noteHtml}${linkHtml}</div>
+        <div class="item-text ${checked?'is-checked':''}">${escapeHtml(it.title)}${lockHtml}${noteHtml}${linkHtml}</div>
         <button class="item-edit" onclick="event.stopPropagation(); openEditModal('${it.id}')" aria-label="Editar item">✎</button>
       </div>
       ${childrenHtml}
@@ -916,7 +950,11 @@ function openAddModal(packKey, sectionTitle, sectionOrder){
   document.getElementById('itemNote').value = '';
   document.getElementById('itemQty').value = '';
   document.getElementById('itemLink').value = '';
+  document.getElementById('itemTitle').disabled = false;
+  document.getElementById('itemNote').disabled = false;
+  document.getElementById('itemLink').disabled = false;
   document.getElementById('itemModalDelete').style.display = 'none';
+  document.getElementById('itemLockedHint').style.display = 'none';
   document.getElementById('itemError').classList.remove('is-visible');
   document.getElementById('itemModalOverlay').classList.add('is-visible');
 }
@@ -924,12 +962,17 @@ function openEditModal(id){
   const it = findItemById(id);
   if(!it) return;
   editingItemId = id; addingContext = null;
-  document.getElementById('itemModalTitle').textContent = 'Editar item';
+  const locked = !!it.obrigatorio;
+  document.getElementById('itemModalTitle').textContent = locked ? 'Editar quantidade' : 'Editar item';
   document.getElementById('itemTitle').value = it.title || '';
   document.getElementById('itemNote').value = it.note || '';
   document.getElementById('itemQty').value = it.quantity || '';
   document.getElementById('itemLink').value = it.link || '';
-  document.getElementById('itemModalDelete').style.display = 'block';
+  document.getElementById('itemTitle').disabled = locked;
+  document.getElementById('itemNote').disabled = locked;
+  document.getElementById('itemLink').disabled = locked;
+  document.getElementById('itemModalDelete').style.display = locked ? 'none' : 'block';
+  document.getElementById('itemLockedHint').style.display = locked ? 'block' : 'none';
   document.getElementById('itemError').classList.remove('is-visible');
   document.getElementById('itemModalOverlay').classList.add('is-visible');
 }
@@ -956,8 +999,10 @@ document.getElementById('itemModalSave').addEventListener('click', async ()=>{
   btn.disabled = true;
 
   if(editingItemId){
+    const editingItem = findItemById(editingItemId);
+    const patch = (editingItem && editingItem.obrigatorio) ? { quantity: qty } : { title, note, quantity: qty, link };
     const { error } = await sb.from('checklist_items')
-      .update({ title, note, quantity: qty, link })
+      .update(patch)
       .eq('id', editingItemId);
     if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); btn.disabled=false; return; }
   } else {
@@ -1001,6 +1046,28 @@ document.getElementById('settingsCancel').addEventListener('click', ()=>{
 });
 document.getElementById('settingsOverlay').addEventListener('click', (e)=>{
   if(e.target.id==='settingsOverlay') document.getElementById('settingsOverlay').classList.remove('is-visible');
+});
+document.getElementById('settingsRefazer').addEventListener('click', ()=>{
+  document.getElementById('settingsOverlay').classList.remove('is-visible');
+  document.getElementById('refazerOverlay').classList.add('is-visible');
+});
+document.getElementById('refazerCancel').addEventListener('click', ()=>{
+  document.getElementById('refazerOverlay').classList.remove('is-visible');
+});
+document.getElementById('refazerOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='refazerOverlay') document.getElementById('refazerOverlay').classList.remove('is-visible');
+});
+document.getElementById('refazerOk').addEventListener('click', async ()=>{
+  const btn = document.getElementById('refazerOk');
+  btn.disabled = true; btn.textContent = 'Refazendo…';
+  await sb.from('checklist_items').delete().eq('user_id', currentUser.id);
+  await sb.from('pack_meta').delete().eq('user_id', currentUser.id);
+  await seedDefaultItems(currentUser.id);
+  await loadAppData();
+  renderPack(activePack);
+  renderCounts();
+  btn.disabled = false; btn.textContent = 'Refazer a lista';
+  document.getElementById('refazerOverlay').classList.remove('is-visible');
 });
 document.getElementById('settingsSave').addEventListener('click', async ()=>{
   const errEl = document.getElementById('setError');
