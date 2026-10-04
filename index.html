@@ -573,7 +573,7 @@ const TEMPLATE = {
    ============================================================ */
 let currentUser = null;
 let currentProfile = null;
-let allItems = [];       // flat list of checklist_items rows for this user
+let allItems = [];       // flat list of lgndcheck_checklist_items rows for this user
 let packMeta = {};        // { ataque: {sugestao,tamanho}, cargueira: {...} }
 let activePack = "ataque";
 
@@ -638,7 +638,7 @@ document.getElementById('settingsLogout').addEventListener('click', logout);
 async function afterLogin(user){
   currentUser = user;
   showScreen('screenLoading');
-  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  const { data: profile, error } = await sb.from('lgndcheck_profiles').select('*').eq('id', user.id).maybeSingle();
   if(error){ console.error(error); showScreen('screenLogin'); document.getElementById('loginError').textContent = 'Erro ao carregar seu perfil.'; return; }
   if(!profile){
     document.getElementById('cadEmail').value = user.email || '';
@@ -682,7 +682,7 @@ document.getElementById('cadSubmit').addEventListener('click', async ()=>{
     primeiro_top: top || null,
     aceita_contato: consent
   };
-  const { error } = await sb.from('profiles').insert(payload);
+  const { error } = await sb.from('lgndcheck_profiles').insert(payload);
   if(error){
     errEl.textContent = 'Erro ao salvar: ' + error.message;
     errEl.classList.add('is-visible');
@@ -710,7 +710,7 @@ async function seedDefaultItems(userId){
     });
   });
 
-  const { data: inserted, error } = await sb.from('checklist_items').insert(parentRows).select();
+  const { data: inserted, error } = await sb.from('lgndcheck_checklist_items').insert(parentRows).select();
   if(error){ console.error('seed parents failed', error); return; }
 
   const childRows = [];
@@ -727,14 +727,14 @@ async function seedDefaultItems(userId){
     }
   });
   if(childRows.length){
-    const { error: cErr } = await sb.from('checklist_items').insert(childRows);
+    const { error: cErr } = await sb.from('lgndcheck_checklist_items').insert(childRows);
     if(cErr) console.error('seed children failed', cErr);
   }
 
   const metaRows = Object.entries(TEMPLATE)
     .filter(([k,p])=>p.meta)
     .map(([k,p])=>({ user_id:userId, pack:k, sugestao:p.meta.sugestao, tamanho:p.meta.tamanho }));
-  const { error: mErr } = await sb.from('pack_meta').insert(metaRows);
+  const { error: mErr } = await sb.from('lgndcheck_pack_meta').insert(metaRows);
   if(mErr) console.error('seed pack_meta failed', mErr);
 }
 
@@ -743,9 +743,9 @@ async function seedDefaultItems(userId){
    ============================================================ */
 async function loadAppData(){
   const [itemsRes, metaRes] = await Promise.all([
-    sb.from('checklist_items').select('*').eq('user_id', currentUser.id)
+    sb.from('lgndcheck_checklist_items').select('*').eq('user_id', currentUser.id)
       .order('pack').order('section_order').order('item_order'),
-    sb.from('pack_meta').select('*').eq('user_id', currentUser.id)
+    sb.from('lgndcheck_pack_meta').select('*').eq('user_id', currentUser.id)
   ]);
   allItems = itemsRes.data || [];
   packMeta = {};
@@ -756,7 +756,7 @@ async function loadAppData(){
 }
 
 async function refreshItemsAndRender(){
-  const { data } = await sb.from('checklist_items').select('*').eq('user_id', currentUser.id)
+  const { data } = await sb.from('lgndcheck_checklist_items').select('*').eq('user_id', currentUser.id)
     .order('pack').order('section_order').order('item_order');
   allItems = data || [];
   renderPack(activePack);
@@ -893,7 +893,7 @@ async function onToggleClick(id){
     secEl.textContent = `${checkedCount}/${ids.length}`;
     secEl.classList.toggle('is-complete', checkedCount===ids.length && ids.length>0);
   }
-  const { error } = await sb.from('checklist_items').update({ checked: it.checked }).eq('id', id);
+  const { error } = await sb.from('lgndcheck_checklist_items').update({ checked: it.checked }).eq('id', id);
   if(error) console.error(error);
 }
 
@@ -909,7 +909,7 @@ document.getElementById('main').addEventListener('focusout', async (e)=>{
     const [packKey, field] = e.target.dataset.meta.split('-');
     const value = e.target.textContent.trim();
     const patch = { [field]: value };
-    const { error } = await sb.from('pack_meta').update(patch).eq('user_id', currentUser.id).eq('pack', packKey);
+    const { error } = await sb.from('lgndcheck_pack_meta').update(patch).eq('user_id', currentUser.id).eq('pack', packKey);
     if(error) console.error(error);
     else { packMeta[packKey] = { ...(packMeta[packKey]||{}), ...patch }; }
   }
@@ -932,7 +932,7 @@ document.getElementById('confirmOk').addEventListener('click', async ()=>{
   renderPack(activePack);
   renderCounts();
   document.getElementById('confirmOverlay').classList.remove('is-visible');
-  const { error } = await sb.from('checklist_items').update({ checked:false }).eq('user_id', currentUser.id);
+  const { error } = await sb.from('lgndcheck_checklist_items').update({ checked:false }).eq('user_id', currentUser.id);
   if(error) console.error(error);
 });
 
@@ -1001,14 +1001,14 @@ document.getElementById('itemModalSave').addEventListener('click', async ()=>{
   if(editingItemId){
     const editingItem = findItemById(editingItemId);
     const patch = (editingItem && editingItem.obrigatorio) ? { quantity: qty } : { title, note, quantity: qty, link };
-    const { error } = await sb.from('checklist_items')
+    const { error } = await sb.from('lgndcheck_checklist_items')
       .update(patch)
       .eq('id', editingItemId);
     if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); btn.disabled=false; return; }
   } else {
     const siblings = allItems.filter(i=>i.pack===addingContext.pack && i.section_order===addingContext.section_order && !i.parent_id);
     const nextOrder = siblings.length ? Math.max(...siblings.map(i=>i.item_order))+1 : 0;
-    const { error } = await sb.from('checklist_items').insert({
+    const { error } = await sb.from('lgndcheck_checklist_items').insert({
       user_id: currentUser.id, pack: addingContext.pack, section_title: addingContext.section_title,
       section_order: addingContext.section_order, item_order: nextOrder,
       title, note, quantity: qty, link, checked: false
@@ -1023,7 +1023,7 @@ document.getElementById('itemModalSave').addEventListener('click', async ()=>{
 document.getElementById('itemModalDelete').addEventListener('click', async ()=>{
   if(!editingItemId) return;
   if(!window.confirm('Excluir este item? Isso também remove sub-itens dele, se houver.')) return;
-  const { error } = await sb.from('checklist_items').delete().eq('id', editingItemId);
+  const { error } = await sb.from('lgndcheck_checklist_items').delete().eq('id', editingItemId);
   if(error){ console.error(error); return; }
   closeItemModal();
   await refreshItemsAndRender();
@@ -1060,8 +1060,8 @@ document.getElementById('refazerOverlay').addEventListener('click', (e)=>{
 document.getElementById('refazerOk').addEventListener('click', async ()=>{
   const btn = document.getElementById('refazerOk');
   btn.disabled = true; btn.textContent = 'Refazendo…';
-  await sb.from('checklist_items').delete().eq('user_id', currentUser.id);
-  await sb.from('pack_meta').delete().eq('user_id', currentUser.id);
+  await sb.from('lgndcheck_checklist_items').delete().eq('user_id', currentUser.id);
+  await sb.from('lgndcheck_pack_meta').delete().eq('user_id', currentUser.id);
   await seedDefaultItems(currentUser.id);
   await loadAppData();
   renderPack(activePack);
@@ -1088,7 +1088,7 @@ document.getElementById('settingsSave').addEventListener('click', async ()=>{
   };
   const btn = document.getElementById('settingsSave');
   btn.disabled = true;
-  const { error } = await sb.from('profiles').update(patch).eq('id', currentUser.id);
+  const { error } = await sb.from('lgndcheck_profiles').update(patch).eq('id', currentUser.id);
   btn.disabled = false;
   if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); return; }
   currentProfile = { ...currentProfile, ...patch };
