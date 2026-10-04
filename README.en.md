@@ -62,7 +62,7 @@ Data security doesn't rely on hiding the Supabase `anon key` (it's meant to live
 ## Architecture
 
 All the logic lives in [`index.html`](index.html):
-- Supabase tables used: `profiles`, `checklist_items`, `pack_meta`
+- Supabase tables used: `lgndcheck_profiles`, `lgndcheck_checklist_items`, `lgndcheck_pack_meta` (`lgndcheck_` prefix because the Supabase project is shared with other apps)
 - Default item template (`TEMPLATE`) used to seed a new user's checklist on first login
 - Auth and sign-up flow (`boot`, `afterLogin`, `seedDefaultItems`)
 - Pack and section rendering (`renderPack`, `buildSections`)
@@ -78,7 +78,7 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-To run it with your own data (instead of the real Legendários database), create a Supabase project, replicate the `profiles`, `checklist_items`, and `pack_meta` tables, and swap `SUPABASE_URL` and `SUPABASE_ANON_KEY` at the top of the `<script>` in `index.html`.
+To run it with your own data (instead of the real Legendários database), create a Supabase project, replicate the `lgndcheck_profiles`, `lgndcheck_checklist_items`, and `lgndcheck_pack_meta` tables, and swap `SUPABASE_URL` and `SUPABASE_ANON_KEY` at the top of the `<script>` in `index.html`.
 
 ---
 
