@@ -40,6 +40,8 @@ header.top{ background:var(--forest-deep); color:var(--paper); padding:22px 20px
 header.top .page{ display:flex; justify-content:space-between; align-items:center; }
 header.top h1{ font-size:22px; margin:0; }
 .logout-btn{ background:rgba(246,240,225,.14); border:1px solid rgba(246,240,225,.4); color:var(--paper); font-family:inherit; font-size:12.5px; padding:7px 12px; border-radius:7px; cursor:pointer; }
+.header-actions{ display:flex; align-items:center; gap:10px; }
+.btn-link{ background:rgba(246,240,225,.14); border:1px solid rgba(246,240,225,.4); color:var(--paper); font-family:inherit; font-size:12.5px; padding:7px 12px; border-radius:7px; text-decoration:none; }
 .kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin-bottom:28px; }
 .kpi{ background:var(--paper); border-radius:10px; padding:16px; border-left:4px solid var(--forest); }
 .kpi .num{ font-size:26px; font-weight:800; font-family:'Bitter', serif; }
@@ -84,7 +86,10 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
   <header class="top">
     <div class="page">
       <h1>Painel — Legendários</h1>
-      <button class="logout-btn" id="logoutBtn">Sair</button>
+      <div class="header-actions">
+        <a class="btn-link" href="index.html">Ir para Checklist</a>
+        <button class="logout-btn" id="logoutBtn">Sair</button>
+      </div>
     </div>
   </header>
 
