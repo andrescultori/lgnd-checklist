@@ -44,6 +44,52 @@ O resultado: cada Legendário abre o app, vê exatamente o que falta separar em 
 ![Lista de itens para comprar](screenshots/04-checklist-comprar.jpg)
 ![Modal de edição de item](screenshots/05-editar-item.jpg)
 
+## Presets de checklist
+
+Além de editar item a item, cada Legendário pode montar a própria checklist do zero e guardá-la como **preset** — um molde sem marcações que dá pra restaurar quando quiser, ou compartilhar com outro Legendário por um código de 10 caracteres / link.
+
+- **1 preset por usuário** no plano gratuito (o modelo já suporta mais de um; o limite é aplicado no servidor)
+- **Restaurar** (preset próprio, preset compartilhado por outro usuário, ou a lista básica padrão) sempre pede confirmação, zera as marcações e cria um **backup automático** da lista atual (com marcações) — dá pra desfazer uma vez
+- **Compartilhar** gera um código curto que sempre aponta pro conteúdo *atual* do preset; revogar o código não apaga cópias já importadas por outros usuários
+
+### Modelo de dados
+
+Quatro tabelas em `public`, mesmo prefixo `lgndcheck_`, RLS ligado, sem nenhum privilégio para `anon`:
+
+| Tabela | O que guarda |
+|---|---|
+| `lgndcheck_presets` | Snapshot do preset (JSON, sem marcações) + `share_code` opcional |
+| `lgndcheck_entitlements` | Limite de presets por usuário (sem linha = 1) |
+| `lgndcheck_list_backups` | Backup automático (com marcações) antes de um restaurar — um por usuário, o mais recente |
+| `lgndcheck_share_rate_limit` | Contador de tentativas de uso de código de compartilhamento (10/min) |
+
+Toda escrita nessas tabelas passa pelas RPCs abaixo — não existe policy de insert/update direta pro usuário.
+
+### RPCs (`SECURITY DEFINER`, só `authenticated`)
+
+| RPC | O que faz |
+|---|---|
+| `lgndcheck_salvar_preset_da_lista_atual(nome, id_para_substituir?)` | Monta o snapshot a partir da lista atual do próprio usuário (nunca aceita JSON do cliente) e cria ou substitui o preset |
+| `lgndcheck_aplicar_preset(id)` | Restaura um preset próprio |
+| `lgndcheck_resetar_para_base(snapshot_base)` | Restaura a lista básica padrão |
+| `lgndcheck_desfazer_ultima_substituicao()` | Restaura o backup mais recente e o apaga |
+| `lgndcheck_compartilhar_preset(id, ativar)` | Gera ou revoga o `share_code` |
+| `lgndcheck_ver_preset_compartilhado(codigo)` | Prévia de um preset compartilhado (nome, dono, contagem por pack, títulos) — nunca o e-mail do dono |
+| `lgndcheck_aplicar_preset_compartilhado(codigo)` | Restaura direto um preset de outro usuário |
+| `lgndcheck_salvar_preset_compartilhado(codigo, id_para_substituir?)` | Importa uma cópia própria de um preset compartilhado |
+
+Migrations: [`supabase/migrations/20261016000000_user_presets.sql`](supabase/migrations/20261016000000_user_presets.sql) e [`supabase/migrations/20261017000000_lgndcheck_presets_restore_e_desfazer.sql`](supabase/migrations/20261017000000_lgndcheck_presets_restore_e_desfazer.sql).
+
+### Elevar o limite de presets de um usuário
+
+O plano com mais de 1 preset ainda não tem fluxo de compra na UI, mas o backend já suporta — basta uma linha na tabela de entitlements:
+
+```sql
+insert into public.lgndcheck_entitlements (user_id, max_presets)
+values ('<uuid-do-usuario>', 3)
+on conflict (user_id) do update set max_presets = excluded.max_presets;
+```
+
 ## Stack técnica
 
 | Camada | Tecnologia |
@@ -62,10 +108,11 @@ A segurança dos dados não depende de esconder a `anon key` do Supabase (ela é
 ## Arquitetura
 
 Toda a lógica está em [`index.html`](index.html):
-- Tabelas do Supabase usadas: `lgndcheck_profiles`, `lgndcheck_checklist_items`, `lgndcheck_pack_meta` (prefixo `lgndcheck_` porque o projeto Supabase é compartilhado com outras aplicações)
-- Template padrão de itens (`TEMPLATE`) usado para semear a checklist de um usuário novo no primeiro login
+- Tabelas do Supabase usadas: `lgndcheck_profiles`, `lgndcheck_checklist_items`, `lgndcheck_pack_meta`, mais as 4 tabelas de presets (ver seção acima) — prefixo `lgndcheck_` porque o projeto Supabase é compartilhado com outras aplicações
+- Template padrão de itens (`TEMPLATE`) usado para semear a checklist de um usuário novo no primeiro login, e convertido (`templateToSnapshot`) pro formato de snapshot usado em "Restaurar lista básica"
 - Fluxo de autenticação e cadastro (`boot`, `afterLogin`, `seedDefaultItems`)
 - Renderização dos packs e seções (`renderPack`, `buildSections`)
+- Presets (`loadPresetState`, `renderPresetSection`, `openRestoreConfirm`, fluxo de compartilhar/importar)
 
 ## Rodando localmente
 
