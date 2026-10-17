@@ -247,9 +247,31 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .text-btn{ background:none; border:none; font-family:'Work Sans', sans-serif; font-size:12.5px; cursor:pointer; padding:8px 0 0; display:block; width:100%; text-align:center; }
 .text-btn.danger{ color:var(--clay-deep); }
 .text-btn.muted{ color:var(--ink-soft); }
+.text-btn:disabled{ opacity:.4; cursor:default; }
 
 .field-error{ color:var(--clay-deep); font-size:12.5px; margin:0 0 10px; display:none; }
 .field-error.is-visible{ display:block; }
+
+/* ---------- Presets ---------- */
+
+.settings-divider{ border-top:1px dashed var(--line); margin:14px 0; }
+.settings-section-title{ font-family:'Work Sans', sans-serif; font-weight:700; font-size:13px; color:var(--ink); margin:0 0 6px; }
+.settings-preset-info{ font-size:12.5px; color:var(--ink-soft); margin:0 0 10px; }
+
+.import-counts{ list-style:none; margin:0 0 10px; padding:0; font-size:13px; color:var(--ink-soft); }
+.import-counts li{ padding:2px 0; }
+.import-preview-list{ list-style:none; margin:0 0 14px; padding:10px 12px; background:var(--canvas); border-radius:8px; font-size:12.5px; color:var(--ink-soft); line-height:1.6; }
+.import-preview-list li{ padding:1px 0; }
+
+.undo-banner{
+  position:fixed; left:0; right:0; top:0; z-index:60; background:var(--forest-deep); color:var(--paper);
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px; display:flex; align-items:center; justify-content:center;
+  gap:14px; font-size:13.5px; transform:translateY(-100%); transition:transform .25s ease;
+}
+.undo-banner.is-visible{ transform:translateY(0); }
+.undo-banner button{ background:rgba(246,240,225,.18); border:1px solid rgba(246,240,225,.4); color:var(--paper); border-radius:6px; padding:5px 10px; font-family:inherit; font-size:12.5px; cursor:pointer; flex-shrink:0; }
+.undo-banner .undo-close{ background:none; border:none; padding:2px 4px; font-size:16px; line-height:1; }
+.undo-banner span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* ---------- Login / Cadastro screens ---------- */
 
@@ -272,6 +294,13 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 </style>
 </head>
 <body>
+
+<!-- ===================== Undo restaurar banner ===================== -->
+<div class="undo-banner" id="undoBanner">
+  <span>Lista restaurada.</span>
+  <button id="undoBannerBtn">Desfazer</button>
+  <button class="undo-close" id="undoBannerClose" aria-label="Fechar">×</button>
+</div>
 
 <!-- ===================== LOGIN ===================== -->
 <div class="gate" id="screenLogin" style="display:none">
@@ -439,20 +468,103 @@ main{ padding:16px 22px 0; background:var(--canvas); }
       <button class="modal-btn modal-cancel" id="settingsCancel">Cancelar</button>
       <button class="modal-btn modal-ok primary" id="settingsSave">Salvar</button>
     </div>
-    <button class="text-btn danger" id="settingsRefazer">Refazer a lista</button>
+
+    <div class="settings-divider"></div>
+    <p class="settings-section-title">Meus presets</p>
+    <p class="settings-preset-info" id="presetInfo">Carregando…</p>
+    <button class="text-btn" id="presetSaveBtn">Salvar lista atual como meu preset</button>
+    <button class="text-btn" id="presetApplyBtn" disabled>Restaurar meu preset</button>
+    <button class="text-btn" id="presetShareBtn" style="display:none">Compartilhar preset</button>
+    <button class="text-btn" id="presetImportBtn">Tenho um código</button>
+
+    <div class="settings-divider"></div>
+    <button class="text-btn danger" id="settingsRefazer">Restaurar lista básica</button>
+    <p class="form-hint" id="presetUndoHint" style="display:none;text-align:center;"></p>
+    <button class="text-btn" id="presetUndoBtn" style="display:none">Desfazer última restauração</button>
+
+    <div class="settings-divider"></div>
     <button class="text-btn muted" id="settingsLogout">Sair da conta</button>
   </div>
 </div>
 
-<!-- ===================== Confirm refazer lista ===================== -->
-<div class="overlay" id="refazerOverlay">
+<!-- ===================== Confirm restaurar (base / meu preset / compartilhado) ===================== -->
+<div class="overlay" id="restoreConfirmOverlay">
   <div class="modal-card">
-    <p class="modal-title">Refazer a lista?</p>
-    <p class="modal-body">Isso apaga todos os itens que você adicionou, editou ou excluiu, e recria a checklist inteira do zero, com os itens padrão. Não há como reverter isso.</p>
+    <p class="modal-title" id="restoreConfirmTitle">Restaurar?</p>
+    <p class="modal-body" id="restoreConfirmBody"></p>
+    <p class="field-error" id="restoreConfirmError"></p>
     <div class="modal-actions">
-      <button class="modal-btn modal-cancel" id="refazerCancel">Cancelar</button>
-      <button class="modal-btn modal-ok" id="refazerOk">Refazer a lista</button>
+      <button class="modal-btn modal-cancel" id="restoreConfirmCancel">Cancelar</button>
+      <button class="modal-btn modal-ok" id="restoreConfirmOk">Restaurar</button>
     </div>
+  </div>
+</div>
+
+<!-- ===================== Salvar / substituir preset ===================== -->
+<div class="overlay" id="presetSaveOverlay">
+  <div class="modal-card">
+    <p class="modal-title" id="presetSaveTitle">Salvar preset</p>
+    <p class="modal-body" id="presetSaveWarning" style="display:none"></p>
+    <div class="form-field"><label>Nome do preset</label><input id="presetSaveName" type="text" maxlength="40" placeholder="Ex: Minha lista de inverno"></div>
+    <p class="field-error" id="presetSaveError"></p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" id="presetSaveCancel">Cancelar</button>
+      <button class="modal-btn modal-ok primary" id="presetSaveConfirm">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Compartilhar preset ===================== -->
+<div class="overlay" id="shareOverlay">
+  <div class="modal-card">
+    <p class="modal-title">Compartilhar preset</p>
+    <p class="modal-body">Quem tiver o código vai ver todos os itens, notas e links do seu preset. Se você salvar o preset de novo, quem importar depois recebe a versão nova — o código sempre aponta pro preset atual.</p>
+
+    <div id="shareInactive">
+      <button class="modal-btn modal-ok primary" id="shareActivateBtn" style="width:100%">Compartilhar preset</button>
+    </div>
+
+    <div id="shareActive" style="display:none">
+      <div class="form-field"><label>Código</label>
+        <input id="shareCode" type="text" readonly style="text-align:center;font-weight:700;letter-spacing:2px;">
+      </div>
+      <div class="form-field"><label>Link</label>
+        <input id="shareLink" type="text" readonly>
+      </div>
+      <button class="modal-btn modal-cancel" id="shareCopyBtn" style="width:100%;margin-bottom:10px;">Copiar link</button>
+      <button class="text-btn danger" id="shareDeactivateBtn">Parar de compartilhar</button>
+    </div>
+
+    <button class="modal-btn modal-cancel" id="shareClose" style="width:100%;margin-top:10px;">Fechar</button>
+  </div>
+</div>
+
+<!-- ===================== Importar: código ===================== -->
+<div class="overlay" id="importCodeOverlay">
+  <div class="modal-card">
+    <p class="modal-title">Tenho um código</p>
+    <div class="form-field"><label>Código do preset</label><input id="importCodeInput" type="text" maxlength="10" placeholder="Ex: 9RWZWNVWJS" style="text-transform:uppercase;letter-spacing:1px;"></div>
+    <p class="field-error" id="importCodeError"></p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" id="importCodeCancel">Cancelar</button>
+      <button class="modal-btn modal-ok primary" id="importCodeSubmit">Ver preset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Importar: prévia ===================== -->
+<div class="overlay" id="importOverlay">
+  <div class="modal-card">
+    <p class="modal-title" id="importTitle">Preset</p>
+    <p class="modal-body" id="importSharedBy"></p>
+    <ul class="import-counts" id="importCounts"></ul>
+    <ul class="import-preview-list" id="importPreviewList"></ul>
+    <p class="field-error" id="importError"></p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" id="importCancel">Fechar</button>
+      <button class="modal-btn modal-ok primary" id="importSaveBtn">Salvar como meu preset</button>
+    </div>
+    <button class="text-btn" id="importApplyBtn">Aplicar à minha lista agora</button>
   </div>
 </div>
 
@@ -464,6 +576,20 @@ const SUPABASE_URL = 'https://rbtcgurgjoounqwokygj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGNndXJnam9vdW5xd29reWdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MTM0NjYsImV4cCI6MjEwNTA4OTQ2Nn0.66RTBQ9_eWQcP6L8wJief64ryvg2vCq280mZRTfXY44';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* Captura ?preset=CODIGO da URL assim que a página carrega (antes do login
+   terminar) e guarda pra continuar depois que afterLogin() rodar. */
+(function capturePresetCodeFromUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('preset');
+  if(code){
+    try{ sessionStorage.setItem('pendingPresetCode', code.trim().toUpperCase()); }catch(e){}
+    params.delete('preset');
+    const newSearch = params.toString();
+    const newUrl = window.location.pathname + (newSearch ? '?'+newSearch : '') + window.location.hash;
+    window.history.replaceState({}, '', newUrl);
+  }
+})();
 
 /* ============================================================
    STATIC PACK INFO (labels, colors, descriptions — not per-user)
@@ -570,6 +696,35 @@ const TEMPLATE = {
   }
 };
 
+/* Converte o TEMPLATE acima pro mesmo formato de snapshot usado pelos
+   presets ({version,packs:[{pack,sugestao,tamanho,sections:[...]}]}), pra
+   "Restaurar lista básica" usar a mesma RPC genérica de aplicar snapshot. */
+function templateToSnapshot(){
+  return {
+    version: 1,
+    packs: Object.entries(TEMPLATE).map(([packKey, pack])=>({
+      pack: packKey,
+      sugestao: pack.meta ? pack.meta.sugestao : null,
+      tamanho: pack.meta ? pack.meta.tamanho : null,
+      sections: pack.sections.map((sec, si)=>({
+        title: sec.title,
+        order: si,
+        items: sec.items.map((it, ii)=>({
+          title: it.t,
+          note: it.note || null,
+          quantity: it.quantity || null,
+          link: null,
+          obrigatorio: !!it.obrigatorio,
+          order: ii,
+          children: (it.children||[]).map((ch,ci)=>({
+            title: ch.t, note: ch.note||null, quantity: null, link: null, order: ci
+          }))
+        }))
+      }))
+    }))
+  };
+}
+
 /* ============================================================
    STATE
    ============================================================ */
@@ -578,6 +733,10 @@ let currentProfile = null;
 let allItems = [];       // flat list of lgndcheck_checklist_items rows for this user
 let packMeta = {};        // { ataque: {sugestao,tamanho}, cargueira: {...} }
 let activePack = "ataque";
+let currentPreset = null;   // { id, name, share_code, shared_at, updated_at } ou null
+let currentBackup = null;   // { reason, created_at } ou null
+let pendingRestoreRun = null; // função async setada antes de abrir #restoreConfirmOverlay
+let importPreview = null;   // { nome, compartilhado_por, contagem, previa, codigo }
 
 /* ============================================================
    HELPERS
@@ -605,6 +764,25 @@ function showScreen(name){
   });
 }
 function findItemById(id){ return allItems.find(i=>i.id===id); }
+function formatDateTime(d){
+  const p = n => String(n).padStart(2,'0');
+  return `${p(d.getDate())}/${p(d.getMonth()+1)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function humanizeRpcError(err){
+  const map = {
+    limite_de_presets: 'Mais presets: em breve.',
+    preset_nao_encontrado: 'Esse preset não existe mais.',
+    sem_backup: 'Não há nada para desfazer.',
+    codigo_invalido: 'Código inválido ou não compartilhado mais.',
+    nome_invalido: 'Digite um nome válido (até 40 caracteres).',
+    muitas_tentativas: 'Muitas tentativas — aguarde um minuto e tente de novo.',
+    preset_muito_grande: 'Essa lista é grande demais pra virar um preset.',
+    muitos_itens: 'Essa lista tem itens demais pra virar um preset.',
+    nao_autenticado: 'Sua sessão expirou — recarregue a página.'
+  };
+  const msg = err && err.message;
+  return map[msg] || ('Erro: ' + (msg || 'desconhecido'));
+}
 
 /* ============================================================
    AUTH FLOW
@@ -652,6 +830,8 @@ async function afterLogin(user){
   showScreen('screenApp');
   renderPack('ataque');
   renderCounts();
+  await loadPresetState();
+  await maybeOpenPendingPresetCode();
 }
 
 /* ============================================================
@@ -1041,6 +1221,7 @@ document.getElementById('settingsBtn').addEventListener('click', ()=>{
   document.getElementById('setTop').value = currentProfile.primeiro_top || '';
   document.getElementById('setConsent').checked = !!currentProfile.aceita_contato;
   document.getElementById('setError').classList.remove('is-visible');
+  renderPresetSection();
   document.getElementById('settingsOverlay').classList.add('is-visible');
 });
 document.getElementById('settingsCancel').addEventListener('click', ()=>{
@@ -1049,28 +1230,341 @@ document.getElementById('settingsCancel').addEventListener('click', ()=>{
 document.getElementById('settingsOverlay').addEventListener('click', (e)=>{
   if(e.target.id==='settingsOverlay') document.getElementById('settingsOverlay').classList.remove('is-visible');
 });
-document.getElementById('settingsRefazer').addEventListener('click', ()=>{
-  document.getElementById('settingsOverlay').classList.remove('is-visible');
-  document.getElementById('refazerOverlay').classList.add('is-visible');
-});
-document.getElementById('refazerCancel').addEventListener('click', ()=>{
-  document.getElementById('refazerOverlay').classList.remove('is-visible');
-});
-document.getElementById('refazerOverlay').addEventListener('click', (e)=>{
-  if(e.target.id==='refazerOverlay') document.getElementById('refazerOverlay').classList.remove('is-visible');
-});
-document.getElementById('refazerOk').addEventListener('click', async ()=>{
-  const btn = document.getElementById('refazerOk');
-  btn.disabled = true; btn.textContent = 'Refazendo…';
-  await sb.from('lgndcheck_checklist_items').delete().eq('user_id', currentUser.id);
-  await sb.from('lgndcheck_pack_meta').delete().eq('user_id', currentUser.id);
-  await seedDefaultItems(currentUser.id);
+
+/* ============================================================
+   PRESETS — estado e render
+   ============================================================ */
+async function loadPresetState(){
+  const [presetRes, backupRes] = await Promise.all([
+    sb.from('lgndcheck_presets').select('id,name,share_code,shared_at,updated_at')
+      .eq('user_id', currentUser.id).order('created_at', { ascending: true }).limit(1),
+    sb.from('lgndcheck_list_backups').select('reason,created_at').eq('user_id', currentUser.id).limit(1)
+  ]);
+  currentPreset = (presetRes.data && presetRes.data[0]) || null;
+  currentBackup = (backupRes.data && backupRes.data[0]) || null;
+  renderPresetSection();
+}
+
+function renderPresetSection(){
+  const infoEl = document.getElementById('presetInfo');
+  const saveBtn = document.getElementById('presetSaveBtn');
+  const applyBtn = document.getElementById('presetApplyBtn');
+  const shareBtn = document.getElementById('presetShareBtn');
+  const undoBtn = document.getElementById('presetUndoBtn');
+  const undoHint = document.getElementById('presetUndoHint');
+
+  if(currentPreset){
+    infoEl.textContent = `"${currentPreset.name}" — salvo em ${formatDateTime(new Date(currentPreset.updated_at))}`;
+    saveBtn.textContent = 'Substituir meu preset';
+    applyBtn.disabled = false;
+    shareBtn.style.display = 'block';
+    shareBtn.textContent = currentPreset.share_code ? 'Gerenciar compartilhamento' : 'Compartilhar preset';
+  } else {
+    infoEl.textContent = 'Você ainda não tem um preset salvo.';
+    saveBtn.textContent = 'Salvar lista atual como meu preset';
+    applyBtn.disabled = true;
+    shareBtn.style.display = 'none';
+  }
+
+  if(currentBackup){
+    undoBtn.style.display = 'block';
+    undoHint.style.display = 'block';
+    undoHint.textContent = `Última restauração em ${formatDateTime(new Date(currentBackup.created_at))}`;
+  } else {
+    undoBtn.style.display = 'none';
+    undoHint.style.display = 'none';
+  }
+}
+
+function showUndoBanner(){ document.getElementById('undoBanner').classList.add('is-visible'); }
+function hideUndoBanner(){ document.getElementById('undoBanner').classList.remove('is-visible'); }
+document.getElementById('undoBannerClose').addEventListener('click', hideUndoBanner);
+
+async function doUndo(btn){
+  if(btn) btn.disabled = true;
+  const { error } = await sb.rpc('lgndcheck_desfazer_ultima_substituicao');
+  if(btn) btn.disabled = false;
+  if(error){ alert(humanizeRpcError(error)); return; }
   await loadAppData();
+  await loadPresetState();
   renderPack(activePack);
   renderCounts();
-  btn.disabled = false; btn.textContent = 'Refazer a lista';
-  document.getElementById('refazerOverlay').classList.remove('is-visible');
+  hideUndoBanner();
+}
+document.getElementById('presetUndoBtn').addEventListener('click', (e)=>doUndo(e.currentTarget));
+document.getElementById('undoBannerBtn').addEventListener('click', (e)=>doUndo(e.currentTarget));
+
+/* ============================================================
+   RESTAURAR (base / meu preset / compartilhado) — modal único
+   ============================================================ */
+function openRestoreConfirm(title, body, okLabel, run){
+  pendingRestoreRun = run;
+  document.getElementById('restoreConfirmTitle').textContent = title;
+  document.getElementById('restoreConfirmBody').textContent = body;
+  document.getElementById('restoreConfirmOk').textContent = okLabel;
+  document.getElementById('restoreConfirmError').classList.remove('is-visible');
+  document.getElementById('restoreConfirmOverlay').classList.add('is-visible');
+}
+function closeRestoreConfirm(){
+  document.getElementById('restoreConfirmOverlay').classList.remove('is-visible');
+  pendingRestoreRun = null;
+}
+document.getElementById('restoreConfirmCancel').addEventListener('click', closeRestoreConfirm);
+document.getElementById('restoreConfirmOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='restoreConfirmOverlay') closeRestoreConfirm();
 });
+document.getElementById('restoreConfirmOk').addEventListener('click', async ()=>{
+  if(!pendingRestoreRun) return;
+  const btn = document.getElementById('restoreConfirmOk');
+  const errEl = document.getElementById('restoreConfirmError');
+  errEl.classList.remove('is-visible');
+  const originalLabel = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Restaurando…';
+  try{
+    await pendingRestoreRun();
+    document.getElementById('restoreConfirmOverlay').classList.remove('is-visible');
+    pendingRestoreRun = null;
+    showUndoBanner();
+  }catch(err){
+    errEl.textContent = humanizeRpcError(err);
+    errEl.classList.add('is-visible');
+  }finally{
+    btn.disabled = false; btn.textContent = originalLabel;
+  }
+});
+
+async function afterRestoreApplied(){
+  await loadAppData();
+  await loadPresetState();
+  renderPack(activePack);
+  renderCounts();
+}
+
+document.getElementById('settingsRefazer').addEventListener('click', ()=>{
+  document.getElementById('settingsOverlay').classList.remove('is-visible');
+  openRestoreConfirm(
+    'Restaurar lista básica?',
+    'Isso substitui sua lista atual (itens, quantidades, notas e marcações) pela lista básica padrão. Você poderá desfazer.',
+    'Restaurar lista básica',
+    async ()=>{
+      const { error } = await sb.rpc('lgndcheck_resetar_para_base', { p_snapshot_base: templateToSnapshot() });
+      if(error) throw error;
+      await afterRestoreApplied();
+    }
+  );
+});
+
+document.getElementById('presetApplyBtn').addEventListener('click', ()=>{
+  if(!currentPreset) return;
+  document.getElementById('settingsOverlay').classList.remove('is-visible');
+  openRestoreConfirm(
+    'Restaurar meu preset?',
+    `Isso substitui sua lista atual (itens, quantidades, notas e marcações) pelo preset "${currentPreset.name}". Você poderá desfazer.`,
+    'Restaurar meu preset',
+    async ()=>{
+      const { error } = await sb.rpc('lgndcheck_aplicar_preset', { p_id: currentPreset.id });
+      if(error) throw error;
+      await afterRestoreApplied();
+    }
+  );
+});
+
+/* ============================================================
+   SALVAR / SUBSTITUIR PRESET
+   ============================================================ */
+document.getElementById('presetSaveBtn').addEventListener('click', ()=>{
+  document.getElementById('settingsOverlay').classList.remove('is-visible');
+  document.getElementById('presetSaveTitle').textContent = currentPreset ? 'Substituir meu preset' : 'Salvar preset';
+  const warnEl = document.getElementById('presetSaveWarning');
+  if(currentPreset){
+    warnEl.textContent = `Isso substitui o preset "${currentPreset.name}" pela sua lista atual (sem marcações).`;
+    warnEl.style.display = 'block';
+  } else {
+    warnEl.style.display = 'none';
+  }
+  document.getElementById('presetSaveName').value = currentPreset ? currentPreset.name : '';
+  document.getElementById('presetSaveError').classList.remove('is-visible');
+  document.getElementById('presetSaveOverlay').classList.add('is-visible');
+});
+document.getElementById('presetSaveCancel').addEventListener('click', ()=>{
+  document.getElementById('presetSaveOverlay').classList.remove('is-visible');
+});
+document.getElementById('presetSaveOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='presetSaveOverlay') document.getElementById('presetSaveOverlay').classList.remove('is-visible');
+});
+document.getElementById('presetSaveConfirm').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('presetSaveError');
+  errEl.classList.remove('is-visible');
+  const name = document.getElementById('presetSaveName').value.trim();
+  if(!name){ errEl.textContent = 'Digite um nome para o preset.'; errEl.classList.add('is-visible'); return; }
+  const btn = document.getElementById('presetSaveConfirm');
+  btn.disabled = true;
+  const { error } = await sb.rpc('lgndcheck_salvar_preset_da_lista_atual', {
+    p_nome: name, p_id_para_substituir: currentPreset ? currentPreset.id : null
+  });
+  btn.disabled = false;
+  if(error){ errEl.textContent = humanizeRpcError(error); errEl.classList.add('is-visible'); return; }
+  document.getElementById('presetSaveOverlay').classList.remove('is-visible');
+  await loadPresetState();
+  document.getElementById('settingsOverlay').classList.add('is-visible');
+});
+
+/* ============================================================
+   COMPARTILHAR PRESET
+   ============================================================ */
+function renderShareModal(){
+  const active = !!(currentPreset && currentPreset.share_code);
+  document.getElementById('shareActive').style.display = active ? 'block' : 'none';
+  document.getElementById('shareInactive').style.display = active ? 'none' : 'block';
+  if(active){
+    document.getElementById('shareCode').value = currentPreset.share_code;
+    document.getElementById('shareLink').value = `${window.location.origin}${window.location.pathname}?preset=${currentPreset.share_code}`;
+  }
+}
+document.getElementById('presetShareBtn').addEventListener('click', ()=>{
+  if(!currentPreset) return;
+  document.getElementById('settingsOverlay').classList.remove('is-visible');
+  renderShareModal();
+  document.getElementById('shareOverlay').classList.add('is-visible');
+});
+document.getElementById('shareClose').addEventListener('click', ()=>{
+  document.getElementById('shareOverlay').classList.remove('is-visible');
+});
+document.getElementById('shareOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='shareOverlay') document.getElementById('shareOverlay').classList.remove('is-visible');
+});
+document.getElementById('shareActivateBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('shareActivateBtn');
+  btn.disabled = true;
+  const { error } = await sb.rpc('lgndcheck_compartilhar_preset', { p_id: currentPreset.id, p_ativar: true });
+  btn.disabled = false;
+  if(error){ alert(humanizeRpcError(error)); return; }
+  await loadPresetState();
+  renderShareModal();
+});
+document.getElementById('shareDeactivateBtn').addEventListener('click', async ()=>{
+  if(!window.confirm('Parar de compartilhar? Quem já importou mantém a cópia, mas o código deixa de funcionar.')) return;
+  const btn = document.getElementById('shareDeactivateBtn');
+  btn.disabled = true;
+  const { error } = await sb.rpc('lgndcheck_compartilhar_preset', { p_id: currentPreset.id, p_ativar: false });
+  btn.disabled = false;
+  if(error){ alert(humanizeRpcError(error)); return; }
+  await loadPresetState();
+  renderShareModal();
+});
+document.getElementById('shareCopyBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('shareLink');
+  input.select(); input.setSelectionRange(0, 99999);
+  const btn = document.getElementById('shareCopyBtn');
+  const original = btn.textContent;
+  const done = ()=>{ btn.textContent = 'Copiado!'; setTimeout(()=>{ btn.textContent = original; }, 1500); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(input.value).then(done).catch(()=>{ document.execCommand('copy'); done(); });
+  } else {
+    document.execCommand('copy'); done();
+  }
+});
+
+/* ============================================================
+   IMPORTAR (código manual ou ?preset=CODIGO)
+   ============================================================ */
+async function tryOpenImportPreview(code, btn, errEl){
+  if(btn) btn.disabled = true;
+  const { data, error } = await sb.rpc('lgndcheck_ver_preset_compartilhado', { p_codigo: code });
+  if(btn) btn.disabled = false;
+  if(error){
+    const msg = humanizeRpcError(error);
+    if(errEl){ errEl.textContent = msg; errEl.classList.add('is-visible'); } else { alert(msg); }
+    return false;
+  }
+  importPreview = { ...data, codigo: code };
+  document.getElementById('importCodeOverlay').classList.remove('is-visible');
+  renderImportPreview();
+  document.getElementById('importOverlay').classList.add('is-visible');
+  return true;
+}
+
+const PACK_LABELS = { ataque:'Ataque', cargueira:'Cargueira', comprar:'Comprar' };
+function renderImportPreview(){
+  const p = importPreview;
+  document.getElementById('importTitle').textContent = p.nome;
+  document.getElementById('importSharedBy').textContent = `Compartilhado por ${p.compartilhado_por}`;
+  document.getElementById('importCounts').innerHTML = (p.contagem||[]).map(c=>
+    `<li>${escapeHtml(PACK_LABELS[c.pack]||c.pack)}: ${c.qtd} ${c.qtd===1?'item':'itens'}</li>`
+  ).join('');
+  document.getElementById('importPreviewList').innerHTML = (p.previa||[]).map(pv=>
+    `<li><b>${escapeHtml(PACK_LABELS[pv.pack]||pv.pack)}:</b> ${(pv.titulos||[]).map(escapeHtml).join(', ')}${(pv.titulos||[]).length>=5?'…':''}</li>`
+  ).join('');
+  document.getElementById('importSaveBtn').textContent = currentPreset ? 'Substituir meu preset' : 'Salvar como meu preset';
+  document.getElementById('importError').classList.remove('is-visible');
+}
+
+document.getElementById('presetImportBtn').addEventListener('click', ()=>{
+  document.getElementById('settingsOverlay').classList.remove('is-visible');
+  document.getElementById('importCodeInput').value = '';
+  document.getElementById('importCodeError').classList.remove('is-visible');
+  document.getElementById('importCodeOverlay').classList.add('is-visible');
+});
+document.getElementById('importCodeCancel').addEventListener('click', ()=>{
+  document.getElementById('importCodeOverlay').classList.remove('is-visible');
+});
+document.getElementById('importCodeOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='importCodeOverlay') document.getElementById('importCodeOverlay').classList.remove('is-visible');
+});
+document.getElementById('importCodeSubmit').addEventListener('click', ()=>{
+  const code = document.getElementById('importCodeInput').value.trim().toUpperCase();
+  const errEl = document.getElementById('importCodeError');
+  errEl.classList.remove('is-visible');
+  if(!code){ errEl.textContent = 'Digite um código.'; errEl.classList.add('is-visible'); return; }
+  tryOpenImportPreview(code, document.getElementById('importCodeSubmit'), errEl);
+});
+
+document.getElementById('importCancel').addEventListener('click', ()=>{
+  document.getElementById('importOverlay').classList.remove('is-visible');
+  importPreview = null;
+});
+document.getElementById('importOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='importOverlay'){ document.getElementById('importOverlay').classList.remove('is-visible'); importPreview = null; }
+});
+document.getElementById('importSaveBtn').addEventListener('click', async ()=>{
+  if(!importPreview) return;
+  const btn = document.getElementById('importSaveBtn');
+  const errEl = document.getElementById('importError');
+  errEl.classList.remove('is-visible');
+  btn.disabled = true;
+  const { error } = await sb.rpc('lgndcheck_salvar_preset_compartilhado', {
+    p_codigo: importPreview.codigo, p_id_para_substituir: currentPreset ? currentPreset.id : null
+  });
+  btn.disabled = false;
+  if(error){ errEl.textContent = humanizeRpcError(error); errEl.classList.add('is-visible'); return; }
+  document.getElementById('importOverlay').classList.remove('is-visible');
+  importPreview = null;
+  await loadPresetState();
+});
+document.getElementById('importApplyBtn').addEventListener('click', ()=>{
+  if(!importPreview) return;
+  const nome = importPreview.nome;
+  const codigo = importPreview.codigo;
+  document.getElementById('importOverlay').classList.remove('is-visible');
+  openRestoreConfirm(
+    'Aplicar preset compartilhado?',
+    `Isso substitui sua lista atual (itens, quantidades, notas e marcações) pelo preset "${nome}". Você poderá desfazer.`,
+    'Aplicar à minha lista',
+    async ()=>{
+      const { error } = await sb.rpc('lgndcheck_aplicar_preset_compartilhado', { p_codigo: codigo });
+      if(error) throw error;
+      await afterRestoreApplied();
+    }
+  );
+});
+
+async function maybeOpenPendingPresetCode(){
+  let code = null;
+  try{ code = sessionStorage.getItem('pendingPresetCode'); }catch(e){}
+  if(!code) return;
+  try{ sessionStorage.removeItem('pendingPresetCode'); }catch(e){}
+  await tryOpenImportPreview(code, null, null);
+}
 document.getElementById('settingsSave').addEventListener('click', async ()=>{
   const errEl = document.getElementById('setError');
   errEl.classList.remove('is-visible');

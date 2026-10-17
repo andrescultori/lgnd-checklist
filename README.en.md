@@ -44,6 +44,52 @@ The result: every member opens the app and sees exactly what's left to pack in e
 ![Shopping list](screenshots/04-checklist-comprar.jpg)
 ![Item edit modal](screenshots/05-editar-item.jpg)
 
+## Checklist presets
+
+Beyond editing item by item, each member can build their own checklist from scratch and save it as a **preset** — a mold with no checkmarks that can be restored anytime, or shared with another member via a 10-character code / link.
+
+- **1 preset per user** on the free tier (the data model already supports more than one; the limit is enforced server-side)
+- **Restoring** (your own preset, a preset shared by someone else, or the default base list) always asks for confirmation, clears all checkmarks, and creates an **automatic backup** of the current list (checkmarks included) — you can undo it once
+- **Sharing** generates a short code that always points at the preset's *current* content; revoking the code doesn't delete copies other users already imported
+
+### Data model
+
+Four tables in `public`, same `lgndcheck_` prefix, RLS on, zero privileges for `anon`:
+
+| Table | What it holds |
+|---|---|
+| `lgndcheck_presets` | The preset's snapshot (JSON, no checkmarks) + an optional `share_code` |
+| `lgndcheck_entitlements` | Per-user preset limit (no row = 1) |
+| `lgndcheck_list_backups` | Automatic backup (with checkmarks) taken before any restore — one per user, the most recent |
+| `lgndcheck_share_rate_limit` | Counter of share-code lookup attempts (10/min) |
+
+Every write to these tables goes through the RPCs below — there's no direct insert/update policy for the user.
+
+### RPCs (`SECURITY DEFINER`, `authenticated` only)
+
+| RPC | What it does |
+|---|---|
+| `lgndcheck_salvar_preset_da_lista_atual(name, replace_id?)` | Builds the snapshot from the user's own current list server-side (never accepts client JSON) and creates or replaces the preset |
+| `lgndcheck_aplicar_preset(id)` | Restores one of the user's own presets |
+| `lgndcheck_resetar_para_base(base_snapshot)` | Restores the default base list |
+| `lgndcheck_desfazer_ultima_substituicao()` | Restores the most recent backup and deletes it |
+| `lgndcheck_compartilhar_preset(id, activate)` | Generates or revokes the `share_code` |
+| `lgndcheck_ver_preset_compartilhado(code)` | Preview of a shared preset (name, owner, per-pack item count, titles) — never the owner's email |
+| `lgndcheck_aplicar_preset_compartilhado(code)` | Restores another user's preset directly |
+| `lgndcheck_salvar_preset_compartilhado(code, replace_id?)` | Imports the user's own copy of a shared preset |
+
+Migrations: [`supabase/migrations/20261016000000_user_presets.sql`](supabase/migrations/20261016000000_user_presets.sql) and [`supabase/migrations/20261017000000_lgndcheck_presets_restore_e_desfazer.sql`](supabase/migrations/20261017000000_lgndcheck_presets_restore_e_desfazer.sql).
+
+### Raising a user's preset limit
+
+The paid tier with more than 1 preset doesn't have a purchase flow in the UI yet, but the backend already supports it — just one row in the entitlements table:
+
+```sql
+insert into public.lgndcheck_entitlements (user_id, max_presets)
+values ('<user-uuid>', 3)
+on conflict (user_id) do update set max_presets = excluded.max_presets;
+```
+
 ## Tech stack
 
 | Layer | Technology |
@@ -62,10 +108,11 @@ Data security doesn't rely on hiding the Supabase `anon key` (it's meant to live
 ## Architecture
 
 All the logic lives in [`index.html`](index.html):
-- Supabase tables used: `lgndcheck_profiles`, `lgndcheck_checklist_items`, `lgndcheck_pack_meta` (`lgndcheck_` prefix because the Supabase project is shared with other apps)
-- Default item template (`TEMPLATE`) used to seed a new user's checklist on first login
+- Supabase tables used: `lgndcheck_profiles`, `lgndcheck_checklist_items`, `lgndcheck_pack_meta`, plus the 4 preset tables (see section above) — `lgndcheck_` prefix because the Supabase project is shared with other apps
+- Default item template (`TEMPLATE`) used to seed a new user's checklist on first login, and converted (`templateToSnapshot`) into the snapshot format used by "Restore base list"
 - Auth and sign-up flow (`boot`, `afterLogin`, `seedDefaultItems`)
 - Pack and section rendering (`renderPack`, `buildSections`)
+- Presets (`loadPresetState`, `renderPresetSection`, `openRestoreConfirm`, the share/import flow)
 
 ## Running locally
 
