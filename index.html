@@ -1034,7 +1034,7 @@ function renderPack(packKey){
           <ul class="items">
             ${sec.items.map(it=>itemRowHtml(it)).join('')}
           </ul>
-          <button class="add-item-btn" onclick="openAddModal('${packKey}', ${JSON.stringify(sec.title)}, ${sec.order})">+ Adicionar item</button>
+          <button class="add-item-btn" data-pack="${packKey}" data-section-title="${escapeHtml(sec.title)}" data-section-order="${sec.order}">+ Adicionar item</button>
         </details>
       `;
     }).join('')}
@@ -1081,6 +1081,15 @@ async function onToggleClick(id){
 
 document.querySelectorAll('.tag-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>renderPack(btn.dataset.pack));
+});
+
+/* ============================================================
+   ADD ITEM BUTTON (delegated — data-* attrs avoid quoting issues
+   that an inline onclick with an interpolated section title would hit)
+   ============================================================ */
+document.getElementById('main').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.add-item-btn');
+  if(btn){ openAddModal(btn.dataset.pack, btn.dataset.sectionTitle, Number(btn.dataset.sectionOrder)); }
 });
 
 /* ============================================================
