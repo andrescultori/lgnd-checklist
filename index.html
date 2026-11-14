@@ -452,7 +452,11 @@ main{ padding:16px 22px 0; background:var(--canvas); }
     <div class="form-field"><label>Nota (opcional)</label><input id="itemNote" type="text" maxlength="60" placeholder="Ex: OnNight 100"></div>
     <div class="form-field"><label>Quantidade (opcional)</label><input id="itemQty" type="text" maxlength="30" placeholder="Ex: 2"></div>
     <div class="form-field"><label>Link (opcional)</label><input id="itemLink" type="url" placeholder="https://"></div>
-    <p class="form-hint" id="itemLockedHint" style="display:none">Este é um item obrigatório da checklist — só a quantidade pode ser alterada.</p>
+    <div class="form-check">
+      <input type="checkbox" id="itemComprar">
+      <p>Colocar na lista de <b>Comprar</b></p>
+    </div>
+    <p class="form-hint" id="itemLockedHint" style="display:none">Este é um item obrigatório da checklist — só a quantidade e o "Comprar" podem ser alterados.</p>
     <p class="field-error" id="itemError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="itemModalCancel">Cancelar</button>
@@ -1322,6 +1326,7 @@ function openAddModal(packKey, sectionTitle, sectionOrder){
   document.getElementById('itemNote').value = '';
   document.getElementById('itemQty').value = '';
   document.getElementById('itemLink').value = '';
+  document.getElementById('itemComprar').checked = false;
   document.getElementById('itemTitle').disabled = false;
   document.getElementById('itemNote').disabled = false;
   document.getElementById('itemLink').disabled = false;
@@ -1340,6 +1345,7 @@ function openEditModal(id){
   document.getElementById('itemNote').value = it.note || '';
   document.getElementById('itemQty').value = it.quantity || '';
   document.getElementById('itemLink').value = it.link || '';
+  document.getElementById('itemComprar').checked = !!it.comprar;
   document.getElementById('itemTitle').disabled = locked;
   document.getElementById('itemNote').disabled = locked;
   document.getElementById('itemLink').disabled = locked;
@@ -1366,13 +1372,15 @@ document.getElementById('itemModalSave').addEventListener('click', async ()=>{
   const linkRaw = document.getElementById('itemLink').value.trim();
   const link = safeLink(linkRaw);
   if(linkRaw && !link){ errEl.textContent='O link precisa começar com http:// ou https://'; errEl.classList.add('is-visible'); return; }
+  const comprar = document.getElementById('itemComprar').checked;
 
   const btn = document.getElementById('itemModalSave');
   btn.disabled = true;
 
   if(editingItemId){
     const editingItem = findItemById(editingItemId);
-    const patch = (editingItem && editingItem.obrigatorio) ? { quantity: qty } : { title, note, quantity: qty, link };
+    const patch = (editingItem && editingItem.obrigatorio) ? { quantity: qty, comprar } : { title, note, quantity: qty, link, comprar };
+    if(!comprar) patch.comprado = false; // some da lista de compras, limpa o "comprado"
     const { error } = await sb.from('lgndcheck_checklist_items')
       .update(patch)
       .eq('id', editingItemId);
@@ -1383,7 +1391,7 @@ document.getElementById('itemModalSave').addEventListener('click', async ()=>{
     const { error } = await sb.from('lgndcheck_checklist_items').insert({
       user_id: currentUser.id, pack: addingContext.pack, section_title: addingContext.section_title,
       section_order: addingContext.section_order, item_order: nextOrder,
-      title, note, quantity: qty, link, checked: false
+      title, note, quantity: qty, link, checked: false, comprar
     });
     if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); btn.disabled=false; return; }
   }
