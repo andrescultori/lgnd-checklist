@@ -633,7 +633,7 @@ const PACKS = {
   },
   comprar: {
     label: "Comprar", accent: "steel", num: 3,
-    desc: "Itens para comprar antes da viagem.",
+    desc: "Esta é uma lista automática: ela não tem itens próprios. Edite qualquer item da Ataque ou Cargueira e marque \"Comprar\" (ou toque no carrinho 🛒 na lista) pra ele aparecer aqui.",
     hasMeta: false
   }
 };
@@ -710,34 +710,15 @@ const TEMPLATE = {
         {t:"Bastão de caminhada"},{t:"Perneira"},
       ]},
     ]
-  },
-  comprar: {
-    sections: [
-      { title:"Comida", items:[
-        {t:"Barra de cereal", quantity:"6", buyQty:6},{t:"Snickers", quantity:"2", buyQty:2},
-      ]},
-      { title:"Outros", items:[
-        {t:"Pilhas"},{t:"Manta térmica"},
-      ]},
-    ]
   }
 };
 
 /* Calcula os valores padrão de buy_name/buy_qty pra um item do TEMPLATE,
-   usados quando o usuário liga o toggle "Comprar" nele. Mesma lógica da
-   migration que fez o backfill dos dados já existentes: por padrão o nome
-   de compra é o próprio título e a quantidade é 1; "Pilhas extras" e itens
-   chamados "Pilhas"/"Manta térmica" mesclam pelo mesmo nome; no pack
-   'comprar' a quantidade de compra vem do campo quantity do item (o que já
-   era mostrado como "qtd" antes desta feature). */
-function buyDefaultsFor(packKey, it){
-  let buyName = it.buyName || it.t;
-  let buyQty = it.buyQty || 1;
-  if(packKey === 'comprar'){
-    const n = parseInt(it.quantity, 10);
-    if(Number.isInteger(n) && n>=1 && n<=999) buyQty = it.buyQty || n;
-  }
-  return { buyName, buyQty };
+   usados quando o usuário liga o toggle "Comprar" nele: por padrão o nome
+   de compra é o próprio título e a quantidade é 1; "Pilhas extras" é o
+   único caso especial no template base, que mescla com "Pilhas". */
+function buyDefaultsFor(it){
+  return { buyName: it.buyName || it.t, buyQty: it.buyQty || 1 };
 }
 
 /* Converte o TEMPLATE acima pro mesmo formato de snapshot usado pelos
@@ -754,7 +735,7 @@ function templateToSnapshot(){
         title: sec.title,
         order: si,
         items: sec.items.map((it, ii)=>{
-          const buy = buyDefaultsFor(packKey, it);
+          const buy = buyDefaultsFor(it);
           return {
             title: it.t,
             note: it.note || null,
@@ -766,7 +747,7 @@ function templateToSnapshot(){
             buy_name: buy.buyName,
             buy_qty: buy.buyQty,
             children: (it.children||[]).map((ch,ci)=>{
-              const chBuy = buyDefaultsFor(packKey, ch);
+              const chBuy = buyDefaultsFor(ch);
               return {
                 title: ch.t, note: ch.note||null, quantity: null, link: null, order: ci,
                 comprar: false, buy_name: chBuy.buyName, buy_qty: chBuy.buyQty
@@ -937,7 +918,7 @@ async function seedDefaultItems(userId){
   Object.entries(TEMPLATE).forEach(([packKey, pack])=>{
     pack.sections.forEach((sec, si)=>{
       sec.items.forEach((it, ii)=>{
-        const buy = buyDefaultsFor(packKey, it);
+        const buy = buyDefaultsFor(it);
         parentRows.push({
           user_id:userId, pack:packKey, section_title:sec.title, section_order:si,
           item_order:ii, title:it.t, note:it.note||null, quantity:it.quantity||null, link:null,
@@ -957,7 +938,7 @@ async function seedDefaultItems(userId){
     const children = childrenMap[idx];
     if(children){
       children.forEach((ch, ci)=>{
-        const chBuy = buyDefaultsFor(row.pack, ch);
+        const chBuy = buyDefaultsFor(ch);
         childRows.push({
           user_id:userId, pack:row.pack, section_title:row.section_title, section_order:row.section_order,
           item_order:ci, title:ch.t, note:ch.note||null, quantity:null, link:null,
@@ -1128,9 +1109,9 @@ function renderCounts(){
 }
 
 /* ============================================================
-   ABA "COMPRAR" — mescla itens de outros packs com comprar=true
-   com os itens manuais do pack 'comprar' (que sempre contam como
-   fonte), agrupando por buy_name normalizado.
+   ABA "COMPRAR" — lista 100% automática: mescla os itens de
+   qualquer pack com comprar=true, agrupando por buy_name
+   normalizado. Não tem itens manuais próprios.
    ============================================================ */
 function normalizeBuyName(s){
   return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -1138,7 +1119,7 @@ function normalizeBuyName(s){
 }
 
 function comprarSourceItems(){
-  return allItems.filter(i => i.pack === 'comprar' || i.comprar === true);
+  return allItems.filter(i => i.comprar === true);
 }
 
 function buildComprarGroups(){
@@ -1176,9 +1157,8 @@ function renderComprarTab(){
     <div class="pack-info"><p>${escapeHtml(pack.desc)}</p></div>
     <ul class="items comprar-merged">
       ${groups.length ? groups.map(g=>comprarRowHtml(g)).join('')
-        : '<li class="comprar-empty">Nada marcado pra comprar ainda. Ative o carrinho 🛒 em qualquer item da lista, ou adicione um item aqui.</li>'}
+        : '<li class="comprar-empty">Nada marcado pra comprar ainda. Ative o carrinho 🛒 em qualquer item da lista Ataque ou Cargueira.</li>'}
     </ul>
-    <button class="add-item-btn" data-pack="comprar" data-section-title="Outros" data-section-order="1">+ Adicionar item</button>
   `;
 }
 
