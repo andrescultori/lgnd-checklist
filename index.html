@@ -187,11 +187,25 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .item-edit{ flex-shrink:0; background:none; border:none; color:var(--ink-soft); opacity:.45; font-size:14px; cursor:pointer; padding:2px 4px; }
 .item-edit:hover{ opacity:.9; }
 
+.item-cart{ flex-shrink:0; background:none; border:none; color:var(--ink-soft); opacity:.4; cursor:pointer; padding:4px 5px; margin:-4px -1px; border-radius:6px; touch-action:manipulation; }
+.item-cart:hover{ opacity:.8; }
+.item-cart.is-active{ color:var(--steel-deep); opacity:1; }
+.cart-badge{ display:inline-flex; vertical-align:middle; margin-left:4px; color:var(--steel-deep); cursor:pointer; }
+
 .subitems{ list-style:none; margin:0 0 2px 29px; padding:0 0 4px; border-left:2px solid var(--line); background:var(--canvas); }
 .subitems .item-row{ padding:5px 0 5px 12px; background:var(--canvas); }
 .subitems .item-text{ font-size:13.5px; }
 .subitems .check{ width:16px; height:16px; }
 .subitems .check.is-checked::after{ left:4px; top:0px; width:4px; height:8px; }
+
+.comprar-group{ border-bottom:1px solid var(--line); padding-bottom:4px; margin-bottom:2px; }
+.comprar-group-row{ cursor:pointer; }
+.comprar-sources-details summary{ font-size:12px; color:var(--ink-soft); cursor:pointer; padding:2px 0 2px 29px; list-style:none; }
+.comprar-sources-details summary::-webkit-details-marker{ display:none; }
+.comprar-sources{ margin:0 0 4px 29px; }
+.comprar-source{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:4px 0 4px 12px; }
+.comprar-source-text{ font-size:13px; color:var(--ink-soft); }
+.comprar-empty{ padding:16px 4px; color:var(--ink-soft); font-size:13.5px; text-align:center; }
 
 .add-item-btn{
   display:block; width:100%; margin:2px 0 10px; padding:9px 10px; border-radius:8px;
@@ -276,7 +290,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 /* ---------- Login / Cadastro screens ---------- */
 
 .gate{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 22px; background:var(--forest-deep); color:var(--paper); text-align:center; }
-.gate-logo{ width:88px; height:88px; margin-bottom:18px; }
+.gate-logo{ width:min(240px, 68vw); height:auto; margin-bottom:20px; }
 .gate h1{ font-size:30px; margin:0 0 10px; }
 .gate p{ font-size:14.5px; opacity:.85; max-width:32ch; margin:0 0 28px; line-height:1.5; }
 .google-btn{
@@ -304,10 +318,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 
 <!-- ===================== LOGIN ===================== -->
 <div class="gate" id="screenLogin" style="display:none">
-  <svg class="gate-logo" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-    <path fill="#F6F0E1" d="M232 194 375 754 762 610 700 480 486 560 386 175Z"/>
-  </svg>
-  <h1>Legendários</h1>
+  <img src="logo-legendarios-branco.png" alt="Legendários" class="gate-logo" width="240" height="190" decoding="async">
   <p>Sua checklist de equipamentos, salva na nuvem e sempre à mão. Entre com sua conta Google pra começar.</p>
   <button class="google-btn" id="googleLoginBtn">
     <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
@@ -448,6 +459,21 @@ main{ padding:16px 22px 0; background:var(--canvas); }
       <button class="modal-btn modal-ok primary" id="itemModalSave">Salvar</button>
     </div>
     <button class="text-btn danger" id="itemModalDelete" style="display:none">Excluir item</button>
+  </div>
+</div>
+
+<!-- ===================== Buy name/qty edit sheet ===================== -->
+<div class="overlay" id="buyEditOverlay">
+  <div class="modal-card">
+    <p class="modal-title">Editar item da compra</p>
+    <div class="form-field"><label>Nome de compra</label><input id="buyEditName" type="text" maxlength="60" placeholder="Ex: Pilhas"></div>
+    <div class="form-field"><label>Quantidade</label><input id="buyEditQty" type="number" inputmode="numeric" min="1" max="999" step="1"></div>
+    <p class="form-hint">Itens com o mesmo nome de compra são somados e mostrados juntos na aba Comprar.</p>
+    <p class="field-error" id="buyEditError"></p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" id="buyEditCancel">Cancelar</button>
+      <button class="modal-btn modal-ok primary" id="buyEditSave">Salvar</button>
+    </div>
   </div>
 </div>
 
@@ -641,7 +667,7 @@ const TEMPLATE = {
         {t:"Capa de mochila"},
         {t:"Canivete"},
         {t:"Segunda pele extra"},
-        {t:"Pilhas extras", quantity:"6"},
+        {t:"Pilhas extras", quantity:"6", buyName:"Pilhas"},
       ]},
       { title:"Higiene + Saúde", items:[
         {t:"Sacos plásticos", quantity:"2"},
@@ -669,6 +695,7 @@ const TEMPLATE = {
         {t:"Meias", quantity:"4"},
         {t:"Roupa íntima extra"},
         {t:"Toalha"},
+        {t:"Chinelo"},
         {t:"Tênis extra"},
         {t:"Sacos plásticos", quantity:"5"},
         {t:"Segunda pele extra"},
@@ -687,7 +714,7 @@ const TEMPLATE = {
   comprar: {
     sections: [
       { title:"Comida", items:[
-        {t:"Barra de cereal", quantity:"6"},{t:"Snickers", quantity:"2"},
+        {t:"Barra de cereal", quantity:"6", buyQty:6},{t:"Snickers", quantity:"2", buyQty:2},
       ]},
       { title:"Outros", items:[
         {t:"Pilhas"},{t:"Manta térmica"},
@@ -695,6 +722,23 @@ const TEMPLATE = {
     ]
   }
 };
+
+/* Calcula os valores padrão de buy_name/buy_qty pra um item do TEMPLATE,
+   usados quando o usuário liga o toggle "Comprar" nele. Mesma lógica da
+   migration que fez o backfill dos dados já existentes: por padrão o nome
+   de compra é o próprio título e a quantidade é 1; "Pilhas extras" e itens
+   chamados "Pilhas"/"Manta térmica" mesclam pelo mesmo nome; no pack
+   'comprar' a quantidade de compra vem do campo quantity do item (o que já
+   era mostrado como "qtd" antes desta feature). */
+function buyDefaultsFor(packKey, it){
+  let buyName = it.buyName || it.t;
+  let buyQty = it.buyQty || 1;
+  if(packKey === 'comprar'){
+    const n = parseInt(it.quantity, 10);
+    if(Number.isInteger(n) && n>=1 && n<=999) buyQty = it.buyQty || n;
+  }
+  return { buyName, buyQty };
+}
 
 /* Converte o TEMPLATE acima pro mesmo formato de snapshot usado pelos
    presets ({version,packs:[{pack,sugestao,tamanho,sections:[...]}]}), pra
@@ -709,17 +753,27 @@ function templateToSnapshot(){
       sections: pack.sections.map((sec, si)=>({
         title: sec.title,
         order: si,
-        items: sec.items.map((it, ii)=>({
-          title: it.t,
-          note: it.note || null,
-          quantity: it.quantity || null,
-          link: null,
-          obrigatorio: !!it.obrigatorio,
-          order: ii,
-          children: (it.children||[]).map((ch,ci)=>({
-            title: ch.t, note: ch.note||null, quantity: null, link: null, order: ci
-          }))
-        }))
+        items: sec.items.map((it, ii)=>{
+          const buy = buyDefaultsFor(packKey, it);
+          return {
+            title: it.t,
+            note: it.note || null,
+            quantity: it.quantity || null,
+            link: null,
+            obrigatorio: !!it.obrigatorio,
+            order: ii,
+            comprar: false,
+            buy_name: buy.buyName,
+            buy_qty: buy.buyQty,
+            children: (it.children||[]).map((ch,ci)=>{
+              const chBuy = buyDefaultsFor(packKey, ch);
+              return {
+                title: ch.t, note: ch.note||null, quantity: null, link: null, order: ci,
+                comprar: false, buy_name: chBuy.buyName, buy_qty: chBuy.buyQty
+              };
+            })
+          };
+        })
       }))
     }))
   };
@@ -778,7 +832,8 @@ function humanizeRpcError(err){
     muitas_tentativas: 'Muitas tentativas — aguarde um minuto e tente de novo.',
     preset_muito_grande: 'Essa lista é grande demais pra virar um preset.',
     muitos_itens: 'Essa lista tem itens demais pra virar um preset.',
-    nao_autenticado: 'Sua sessão expirou — recarregue a página.'
+    nao_autenticado: 'Sua sessão expirou — recarregue a página.',
+    campos_compra_invalidos: 'Esse preset tem um nome ou quantidade de compra inválido.'
   };
   const msg = err && err.message;
   return map[msg] || ('Erro: ' + (msg || 'desconhecido'));
@@ -882,10 +937,12 @@ async function seedDefaultItems(userId){
   Object.entries(TEMPLATE).forEach(([packKey, pack])=>{
     pack.sections.forEach((sec, si)=>{
       sec.items.forEach((it, ii)=>{
+        const buy = buyDefaultsFor(packKey, it);
         parentRows.push({
           user_id:userId, pack:packKey, section_title:sec.title, section_order:si,
           item_order:ii, title:it.t, note:it.note||null, quantity:it.quantity||null, link:null,
-          checked:false, obrigatorio:!!it.obrigatorio
+          checked:false, obrigatorio:!!it.obrigatorio,
+          comprar:false, buy_name:buy.buyName, buy_qty:buy.buyQty
         });
         childrenMap.push(it.children || null);
       });
@@ -900,10 +957,12 @@ async function seedDefaultItems(userId){
     const children = childrenMap[idx];
     if(children){
       children.forEach((ch, ci)=>{
+        const chBuy = buyDefaultsFor(row.pack, ch);
         childRows.push({
           user_id:userId, pack:row.pack, section_title:row.section_title, section_order:row.section_order,
           item_order:ci, title:ch.t, note:ch.note||null, quantity:null, link:null,
-          parent_id: row.id, checked:false
+          parent_id: row.id, checked:false,
+          comprar:false, buy_name:chBuy.buyName, buy_qty:chBuy.buyQty
         });
       });
     }
@@ -979,17 +1038,24 @@ function itemRowHtml(it){
   const lockHtml = it.obrigatorio
     ? ` <svg class="item-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-label="Item obrigatório"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`
     : '';
+  const cartBadgeHtml = it.comprar
+    ? ` <span class="cart-badge" title="Editar nome/quantidade de compra" onclick="event.stopPropagation(); openBuyEditModal('${it.id}')">${cartIconSvg(11)}</span>` : '';
   const childrenHtml = (it.children && it.children.length)
     ? `<ul class="subitems">${it.children.map(ch=>itemRowHtml(ch)).join('')}</ul>` : '';
   return `
     <li class="item">
       <div class="item-row" data-id="${it.id}" onclick="onToggleClick('${it.id}')">
         <div class="check ${checked?'is-checked':''}"></div>
-        <div class="item-text ${checked?'is-checked':''}">${escapeHtml(it.title)}${lockHtml}${noteHtml}${linkHtml}</div>
+        <div class="item-text ${checked?'is-checked':''}">${escapeHtml(it.title)}${lockHtml}${noteHtml}${linkHtml}${cartBadgeHtml}</div>
+        <button class="item-cart ${it.comprar?'is-active':''}" onclick="event.stopPropagation(); onToggleCart('${it.id}')" aria-label="${it.comprar ? 'Remover da lista de compras' : 'Adicionar à lista de compras'}" aria-pressed="${it.comprar?'true':'false'}">${cartIconSvg(16)}</button>
         <button class="item-edit" onclick="event.stopPropagation(); openEditModal('${it.id}')" aria-label="Editar item">✎</button>
       </div>
       ${childrenHtml}
     </li>`;
+}
+
+function cartIconSvg(size){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>`;
 }
 
 function metaValue(packKey, field, fallback){
@@ -1006,6 +1072,8 @@ function renderPack(packKey){
   document.documentElement.style.setProperty('--accent', a.base);
   document.documentElement.style.setProperty('--accent-deep', a.deep);
   document.documentElement.style.setProperty('--accent-tint', a.tint);
+
+  if(packKey === 'comprar'){ renderComprarTab(); return; }
 
   const sections = buildSections(packKey);
   const main = document.getElementById('main');
@@ -1042,16 +1110,112 @@ function renderPack(packKey){
 }
 
 function renderCounts(){
-  ['ataque','cargueira','comprar'].forEach(packKey=>{
+  ['ataque','cargueira'].forEach(packKey=>{
     const ids = allItems.filter(i=>i.pack===packKey).map(i=>i.id);
     const checked = allItems.filter(i=>i.pack===packKey && i.checked).length;
     const el = document.getElementById('count' + packKey.charAt(0).toUpperCase() + packKey.slice(1));
     if(el) el.textContent = `${checked}/${ids.length}`;
   });
+  const groups = buildComprarGroups();
+  const doneGroups = groups.filter(g=>g.comprado).length;
+  const elComprar = document.getElementById('countComprar');
+  if(elComprar) elComprar.textContent = `${doneGroups}/${groups.length}`;
+
   const total = allItems.length;
   const checked = allItems.filter(i=>i.checked).length;
   document.getElementById('overallCount').textContent = `${checked} de ${total}`;
   document.getElementById('overallFill').style.width = total ? `${(checked/total)*100}%` : '0%';
+}
+
+/* ============================================================
+   ABA "COMPRAR" — mescla itens de outros packs com comprar=true
+   com os itens manuais do pack 'comprar' (que sempre contam como
+   fonte), agrupando por buy_name normalizado.
+   ============================================================ */
+function normalizeBuyName(s){
+  return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+function comprarSourceItems(){
+  return allItems.filter(i => i.pack === 'comprar' || i.comprar === true);
+}
+
+function buildComprarGroups(){
+  const groupsByKey = new Map();
+  comprarSourceItems().forEach(it=>{
+    const rawName = (it.buy_name && it.buy_name.trim()) ? it.buy_name.trim() : it.title;
+    const key = normalizeBuyName(rawName) || it.id;
+    if(!groupsByKey.has(key)){
+      groupsByKey.set(key, { key, nameCounts: new Map(), totalQty: 0, items: [] });
+    }
+    const g = groupsByKey.get(key);
+    g.nameCounts.set(rawName, (g.nameCounts.get(rawName) || 0) + 1);
+    g.totalQty += (it.buy_qty || 1);
+    g.items.push(it);
+  });
+  return [...groupsByKey.values()].map(g=>{
+    let displayName = g.items[0] ? ((g.items[0].buy_name && g.items[0].buy_name.trim()) || g.items[0].title) : '';
+    let bestN = -1;
+    g.nameCounts.forEach((n, name)=>{ if(n > bestN){ bestN = n; displayName = name; } });
+    return {
+      key: g.key,
+      displayName,
+      totalQty: g.totalQty,
+      items: g.items,
+      comprado: g.items.every(it=>it.comprado)
+    };
+  }).sort((a,b)=>a.displayName.localeCompare(b.displayName, 'pt-BR'));
+}
+
+function renderComprarTab(){
+  const pack = PACKS.comprar;
+  const groups = buildComprarGroups();
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="pack-info"><p>${escapeHtml(pack.desc)}</p></div>
+    <ul class="items comprar-merged">
+      ${groups.length ? groups.map(g=>comprarRowHtml(g)).join('')
+        : '<li class="comprar-empty">Nada marcado pra comprar ainda. Ative o carrinho 🛒 em qualquer item da lista, ou adicione um item aqui.</li>'}
+    </ul>
+    <button class="add-item-btn" data-pack="comprar" data-section-title="Outros" data-section-order="1">+ Adicionar item</button>
+  `;
+}
+
+function comprarRowHtml(g){
+  const sourcesHtml = g.items.map(it=>{
+    const packLabel = PACKS[it.pack] ? PACKS[it.pack].label : it.pack;
+    return `
+      <li class="comprar-source">
+        <span class="comprar-source-text">${escapeHtml(packLabel)} · ${escapeHtml(it.section_title)} · ${escapeHtml(it.title)} <span class="item-note">(×${it.buy_qty || 1})</span></span>
+        <button class="item-edit" onclick="event.stopPropagation(); openBuyEditModal('${it.id}')" aria-label="Editar nome/quantidade de compra">✎</button>
+      </li>`;
+  }).join('');
+  const fonteLabel = g.items.length > 1 ? `${g.items.length} fontes` : '1 fonte';
+  return `
+    <li class="item comprar-group">
+      <div class="item-row comprar-group-row" data-merge="${escapeHtml(g.key)}">
+        <div class="check ${g.comprado ? 'is-checked' : ''}"></div>
+        <div class="item-text ${g.comprado ? 'is-checked' : ''}">${escapeHtml(g.displayName)} ×${g.totalQty}</div>
+      </div>
+      <details class="comprar-sources-details">
+        <summary onclick="event.stopPropagation()">${fonteLabel}</summary>
+        <ul class="subitems comprar-sources">${sourcesHtml}</ul>
+      </details>
+    </li>`;
+}
+
+async function onToggleComprado(key){
+  const groups = buildComprarGroups();
+  const g = groups.find(x=>x.key===key);
+  if(!g) return;
+  const newState = !g.comprado;
+  g.items.forEach(it=>{ it.comprado = newState; });
+  renderPack(activePack);
+  renderCounts();
+  const ids = g.items.map(it=>it.id);
+  const { error } = await sb.from('lgndcheck_checklist_items').update({ comprado: newState }).in('id', ids);
+  if(error) console.error(error);
 }
 
 /* ============================================================
@@ -1079,6 +1243,21 @@ async function onToggleClick(id){
   if(error) console.error(error);
 }
 
+/* ============================================================
+   TOGGLE CARRINHO ("Comprar")
+   ============================================================ */
+async function onToggleCart(id){
+  const it = findItemById(id);
+  if(!it) return;
+  it.comprar = !it.comprar;
+  const patch = { comprar: it.comprar };
+  if(!it.comprar){ it.comprado = false; patch.comprado = false; } // some da lista de compras, limpa o "comprado"
+  renderPack(activePack);
+  renderCounts();
+  const { error } = await sb.from('lgndcheck_checklist_items').update(patch).eq('id', id);
+  if(error) console.error(error);
+}
+
 document.querySelectorAll('.tag-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>renderPack(btn.dataset.pack));
 });
@@ -1089,7 +1268,9 @@ document.querySelectorAll('.tag-btn').forEach(btn=>{
    ============================================================ */
 document.getElementById('main').addEventListener('click', (e)=>{
   const btn = e.target.closest('.add-item-btn');
-  if(btn){ openAddModal(btn.dataset.pack, btn.dataset.sectionTitle, Number(btn.dataset.sectionOrder)); }
+  if(btn){ openAddModal(btn.dataset.pack, btn.dataset.sectionTitle, Number(btn.dataset.sectionOrder)); return; }
+  const mergeRow = e.target.closest('.comprar-group-row');
+  if(mergeRow){ onToggleComprado(mergeRow.dataset.merge); }
 });
 
 /* ============================================================
@@ -1218,6 +1399,51 @@ document.getElementById('itemModalDelete').addEventListener('click', async ()=>{
   if(error){ console.error(error); return; }
   closeItemModal();
   await refreshItemsAndRender();
+});
+
+/* ============================================================
+   EDIÇÃO DE NOME/QUANTIDADE DE COMPRA (sheet pequeno)
+   ============================================================ */
+let buyEditItemId = null;
+
+function openBuyEditModal(id){
+  const it = findItemById(id);
+  if(!it) return;
+  buyEditItemId = id;
+  document.getElementById('buyEditName').value = (it.buy_name && it.buy_name.trim()) || it.title;
+  document.getElementById('buyEditQty').value = it.buy_qty || 1;
+  document.getElementById('buyEditError').classList.remove('is-visible');
+  document.getElementById('buyEditOverlay').classList.add('is-visible');
+}
+function closeBuyEditModal(){
+  document.getElementById('buyEditOverlay').classList.remove('is-visible');
+}
+document.getElementById('buyEditCancel').addEventListener('click', closeBuyEditModal);
+document.getElementById('buyEditOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='buyEditOverlay') closeBuyEditModal();
+});
+document.getElementById('buyEditSave').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('buyEditError');
+  errEl.classList.remove('is-visible');
+  if(!buyEditItemId) return;
+  const name = document.getElementById('buyEditName').value.trim();
+  const qty = parseInt(document.getElementById('buyEditQty').value, 10);
+  if(!name){ errEl.textContent = 'Digite um nome.'; errEl.classList.add('is-visible'); return; }
+  if(!Number.isInteger(qty) || qty < 1 || qty > 999){ errEl.textContent = 'Quantidade precisa ser um número entre 1 e 999.'; errEl.classList.add('is-visible'); return; }
+
+  const btn = document.getElementById('buyEditSave');
+  btn.disabled = true;
+  const { error } = await sb.from('lgndcheck_checklist_items')
+    .update({ buy_name: name, buy_qty: qty })
+    .eq('id', buyEditItemId);
+  btn.disabled = false;
+  if(error){ errEl.textContent = 'Erro ao salvar: ' + error.message; errEl.classList.add('is-visible'); return; }
+
+  const it = findItemById(buyEditItemId);
+  if(it){ it.buy_name = name; it.buy_qty = qty; }
+  closeBuyEditModal();
+  renderPack(activePack);
+  renderCounts();
 });
 
 /* ============================================================
