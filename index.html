@@ -456,6 +456,11 @@ main{ padding:16px 22px 0; background:var(--canvas); }
       <input type="checkbox" id="itemComprar">
       <p>Colocar na lista de <b>Comprar</b></p>
     </div>
+    <div id="itemBuyFields" style="display:none">
+      <div class="form-field"><label>Nome de compra (opcional)</label><input id="itemBuyName" type="text" maxlength="60" placeholder="Ex: Pilhas"></div>
+      <div class="form-field"><label>Quantidade de compra</label><input id="itemBuyQty" type="number" inputmode="numeric" min="1" max="999" step="1"></div>
+      <p class="form-hint">Deixe o nome em branco pra usar o título do item. Itens com o mesmo nome de compra são somados e mostrados juntos na aba Comprar.</p>
+    </div>
     <p class="form-hint" id="itemLockedHint" style="display:none">Este é um item obrigatório da checklist — só a quantidade e o "Comprar" podem ser alterados.</p>
     <p class="field-error" id="itemError"></p>
     <div class="modal-actions">
@@ -463,21 +468,6 @@ main{ padding:16px 22px 0; background:var(--canvas); }
       <button class="modal-btn modal-ok primary" id="itemModalSave">Salvar</button>
     </div>
     <button class="text-btn danger" id="itemModalDelete" style="display:none">Excluir item</button>
-  </div>
-</div>
-
-<!-- ===================== Buy name/qty edit sheet ===================== -->
-<div class="overlay" id="buyEditOverlay">
-  <div class="modal-card">
-    <p class="modal-title">Editar item da compra</p>
-    <div class="form-field"><label>Nome de compra</label><input id="buyEditName" type="text" maxlength="60" placeholder="Ex: Pilhas"></div>
-    <div class="form-field"><label>Quantidade</label><input id="buyEditQty" type="number" inputmode="numeric" min="1" max="999" step="1"></div>
-    <p class="form-hint">Itens com o mesmo nome de compra são somados e mostrados juntos na aba Comprar.</p>
-    <p class="field-error" id="buyEditError"></p>
-    <div class="modal-actions">
-      <button class="modal-btn modal-cancel" id="buyEditCancel">Cancelar</button>
-      <button class="modal-btn modal-ok primary" id="buyEditSave">Salvar</button>
-    </div>
   </div>
 </div>
 
@@ -1043,7 +1033,7 @@ function itemRowHtml(it){
     ? ` <svg class="item-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-label="Item obrigatório"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`
     : '';
   const cartBadgeHtml = it.comprar
-    ? ` <span class="cart-badge" title="Editar nome/quantidade de compra" onclick="event.stopPropagation(); openBuyEditModal('${it.id}')">${cartIconSvg(11)}</span>` : '';
+    ? ` <span class="cart-badge" title="Editar nome/quantidade de compra" onclick="event.stopPropagation(); openEditModal('${it.id}')">${cartIconSvg(11)}</span>` : '';
   const childrenHtml = (it.children && it.children.length)
     ? `<ul class="subitems">${it.children.map(ch=>itemRowHtml(ch)).join('')}</ul>` : '';
   return `
@@ -1059,7 +1049,7 @@ function itemRowHtml(it){
 }
 
 function cartIconSvg(size){
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1.4"/><circle cx="19" cy="21" r="1.4"/><path d="M1.5 2h3l2.3 12.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L21.5 6h-16"/></svg>`;
 }
 
 function metaValue(packKey, field, fallback){
@@ -1192,7 +1182,7 @@ function comprarRowHtml(g){
     return `
       <li class="comprar-source">
         <span class="comprar-source-text">${escapeHtml(packLabel)} · ${escapeHtml(it.section_title)} · ${escapeHtml(it.title)} <span class="item-note">(×${it.buy_qty || 1})</span></span>
-        <button class="item-edit" onclick="event.stopPropagation(); openBuyEditModal('${it.id}')" aria-label="Editar nome/quantidade de compra">✎</button>
+        <button class="item-edit" onclick="event.stopPropagation(); openEditModal('${it.id}')" aria-label="Editar nome/quantidade de compra">✎</button>
       </li>`;
   }).join('');
   const fonteLabel = g.items.length > 1 ? `${g.items.length} fontes` : '1 fonte';
@@ -1327,6 +1317,9 @@ function openAddModal(packKey, sectionTitle, sectionOrder){
   document.getElementById('itemQty').value = '';
   document.getElementById('itemLink').value = '';
   document.getElementById('itemComprar').checked = false;
+  document.getElementById('itemBuyName').value = '';
+  document.getElementById('itemBuyQty').value = 1;
+  document.getElementById('itemBuyFields').style.display = 'none';
   document.getElementById('itemTitle').disabled = false;
   document.getElementById('itemNote').disabled = false;
   document.getElementById('itemLink').disabled = false;
@@ -1346,6 +1339,9 @@ function openEditModal(id){
   document.getElementById('itemQty').value = it.quantity || '';
   document.getElementById('itemLink').value = it.link || '';
   document.getElementById('itemComprar').checked = !!it.comprar;
+  document.getElementById('itemBuyName').value = (it.buy_name && it.buy_name.trim()) || '';
+  document.getElementById('itemBuyQty').value = it.buy_qty || 1;
+  document.getElementById('itemBuyFields').style.display = it.comprar ? 'block' : 'none';
   document.getElementById('itemTitle').disabled = locked;
   document.getElementById('itemNote').disabled = locked;
   document.getElementById('itemLink').disabled = locked;
@@ -1361,6 +1357,9 @@ document.getElementById('itemModalCancel').addEventListener('click', closeItemMo
 document.getElementById('itemModalOverlay').addEventListener('click', (e)=>{
   if(e.target.id==='itemModalOverlay') closeItemModal();
 });
+document.getElementById('itemComprar').addEventListener('change', (e)=>{
+  document.getElementById('itemBuyFields').style.display = e.target.checked ? 'block' : 'none';
+});
 
 document.getElementById('itemModalSave').addEventListener('click', async ()=>{
   const errEl = document.getElementById('itemError');
@@ -1373,13 +1372,25 @@ document.getElementById('itemModalSave').addEventListener('click', async ()=>{
   const link = safeLink(linkRaw);
   if(linkRaw && !link){ errEl.textContent='O link precisa começar com http:// ou https://'; errEl.classList.add('is-visible'); return; }
   const comprar = document.getElementById('itemComprar').checked;
+  const buyName = document.getElementById('itemBuyName').value.trim() || null;
+  let buyQty = 1;
+  if(comprar){
+    buyQty = parseInt(document.getElementById('itemBuyQty').value, 10);
+    if(!Number.isInteger(buyQty) || buyQty < 1 || buyQty > 999){
+      errEl.textContent = 'Quantidade de compra precisa ser um número entre 1 e 999.';
+      errEl.classList.add('is-visible');
+      return;
+    }
+  }
 
   const btn = document.getElementById('itemModalSave');
   btn.disabled = true;
 
   if(editingItemId){
     const editingItem = findItemById(editingItemId);
-    const patch = (editingItem && editingItem.obrigatorio) ? { quantity: qty, comprar } : { title, note, quantity: qty, link, comprar };
+    const patch = (editingItem && editingItem.obrigatorio)
+      ? { quantity: qty, comprar, buy_name: buyName, buy_qty: buyQty }
+      : { title, note, quantity: qty, link, comprar, buy_name: buyName, buy_qty: buyQty };
     if(!comprar) patch.comprado = false; // some da lista de compras, limpa o "comprado"
     const { error } = await sb.from('lgndcheck_checklist_items')
       .update(patch)
@@ -1391,7 +1402,7 @@ document.getElementById('itemModalSave').addEventListener('click', async ()=>{
     const { error } = await sb.from('lgndcheck_checklist_items').insert({
       user_id: currentUser.id, pack: addingContext.pack, section_title: addingContext.section_title,
       section_order: addingContext.section_order, item_order: nextOrder,
-      title, note, quantity: qty, link, checked: false, comprar
+      title, note, quantity: qty, link, checked: false, comprar, buy_name: buyName, buy_qty: buyQty
     });
     if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); btn.disabled=false; return; }
   }
@@ -1407,51 +1418,6 @@ document.getElementById('itemModalDelete').addEventListener('click', async ()=>{
   if(error){ console.error(error); return; }
   closeItemModal();
   await refreshItemsAndRender();
-});
-
-/* ============================================================
-   EDIÇÃO DE NOME/QUANTIDADE DE COMPRA (sheet pequeno)
-   ============================================================ */
-let buyEditItemId = null;
-
-function openBuyEditModal(id){
-  const it = findItemById(id);
-  if(!it) return;
-  buyEditItemId = id;
-  document.getElementById('buyEditName').value = (it.buy_name && it.buy_name.trim()) || it.title;
-  document.getElementById('buyEditQty').value = it.buy_qty || 1;
-  document.getElementById('buyEditError').classList.remove('is-visible');
-  document.getElementById('buyEditOverlay').classList.add('is-visible');
-}
-function closeBuyEditModal(){
-  document.getElementById('buyEditOverlay').classList.remove('is-visible');
-}
-document.getElementById('buyEditCancel').addEventListener('click', closeBuyEditModal);
-document.getElementById('buyEditOverlay').addEventListener('click', (e)=>{
-  if(e.target.id==='buyEditOverlay') closeBuyEditModal();
-});
-document.getElementById('buyEditSave').addEventListener('click', async ()=>{
-  const errEl = document.getElementById('buyEditError');
-  errEl.classList.remove('is-visible');
-  if(!buyEditItemId) return;
-  const name = document.getElementById('buyEditName').value.trim();
-  const qty = parseInt(document.getElementById('buyEditQty').value, 10);
-  if(!name){ errEl.textContent = 'Digite um nome.'; errEl.classList.add('is-visible'); return; }
-  if(!Number.isInteger(qty) || qty < 1 || qty > 999){ errEl.textContent = 'Quantidade precisa ser um número entre 1 e 999.'; errEl.classList.add('is-visible'); return; }
-
-  const btn = document.getElementById('buyEditSave');
-  btn.disabled = true;
-  const { error } = await sb.from('lgndcheck_checklist_items')
-    .update({ buy_name: name, buy_qty: qty })
-    .eq('id', buyEditItemId);
-  btn.disabled = false;
-  if(error){ errEl.textContent = 'Erro ao salvar: ' + error.message; errEl.classList.add('is-visible'); return; }
-
-  const it = findItemById(buyEditItemId);
-  if(it){ it.buy_name = name; it.buy_qty = qty; }
-  closeBuyEditModal();
-  renderPack(activePack);
-  renderCounts();
 });
 
 /* ============================================================
