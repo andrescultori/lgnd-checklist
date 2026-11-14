@@ -247,11 +247,12 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 
 .form-field{ margin-bottom:13px; }
 .form-field label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; }
-.form-field input, .form-field textarea{
+.form-field input, .form-field textarea, .form-field select{
   width:100%; padding:10px 11px; border-radius:8px; border:1.5px solid var(--line);
   background:var(--canvas); color:var(--ink); font-family:'Work Sans', sans-serif; font-size:14px;
 }
-.form-field input:focus, .form-field textarea:focus{ outline:none; border-color:var(--accent); }
+.form-field input:focus, .form-field textarea:focus, .form-field select:focus{ outline:none; border-color:var(--accent); }
+.form-field select:disabled{ opacity:.55; }
 .form-check{ display:flex; align-items:flex-start; gap:9px; margin:14px 0 4px; }
 .form-check input{ margin-top:3px; flex-shrink:0; width:17px; height:17px; }
 .form-check p{ margin:0; font-size:12.5px; line-height:1.5; color:var(--ink-soft); }
@@ -452,6 +453,11 @@ main{ padding:16px 22px 0; background:var(--canvas); }
     <div class="form-field"><label>Nota (opcional)</label><input id="itemNote" type="text" maxlength="60" placeholder="Ex: OnNight 100"></div>
     <div class="form-field"><label>Quantidade (opcional)</label><input id="itemQty" type="text" maxlength="30" placeholder="Ex: 2"></div>
     <div class="form-field"><label>Link (opcional)</label><input id="itemLink" type="url" placeholder="https://"></div>
+    <div class="form-field">
+      <label>Sub-item de</label>
+      <select id="itemParent"></select>
+      <p class="form-hint" id="itemParentHint" style="display:none">Este item tem sub-itens — não pode virar sub-item de outro.</p>
+    </div>
     <div class="form-check">
       <input type="checkbox" id="itemComprar">
       <p>Colocar na lista de <b>Comprar</b></p>
@@ -461,7 +467,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
       <div class="form-field"><label>Quantidade de compra</label><input id="itemBuyQty" type="number" inputmode="numeric" min="1" max="999" step="1"></div>
       <p class="form-hint">Deixe o nome em branco pra usar o título do item. Itens com o mesmo nome de compra são somados e mostrados juntos na aba Comprar.</p>
     </div>
-    <p class="form-hint" id="itemLockedHint" style="display:none">Este é um item obrigatório da checklist — só a quantidade e o "Comprar" podem ser alterados.</p>
+    <p class="form-hint" id="itemLockedHint" style="display:none">Este é um item obrigatório da checklist — o título, a nota e o link não podem ser alterados.</p>
     <p class="field-error" id="itemError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="itemModalCancel">Cancelar</button>
@@ -1308,6 +1314,29 @@ document.getElementById('confirmOk').addEventListener('click', async ()=>{
 let editingItemId = null;
 let addingContext = null;
 
+/* Preenche o <select> "Sub-item de" com os itens de primeiro nível da
+   mesma seção (único nível de aninhamento que o app entende hoje).
+   excludeId tira o próprio item da lista, quando editando. */
+/* Próximo item_order entre os irmãos do destino: outros filhos do mesmo
+   pai (parentId truthy) ou outros itens de primeiro nível da seção
+   (parentId null/''). */
+function nextOrderForParent(parentId, packKey, sectionOrder){
+  const siblings = parentId
+    ? allItems.filter(i => i.parent_id === parentId)
+    : allItems.filter(i => i.pack === packKey && i.section_order === sectionOrder && !i.parent_id);
+  return siblings.length ? Math.max(...siblings.map(i => i.item_order)) + 1 : 0;
+}
+
+function populateParentOptions(packKey, sectionOrder, selectedParentId, excludeId){
+  const sel = document.getElementById('itemParent');
+  const candidates = allItems
+    .filter(i => i.pack === packKey && i.section_order === sectionOrder && !i.parent_id && i.id !== excludeId)
+    .sort((a,b) => a.item_order - b.item_order);
+  sel.innerHTML = '<option value="">Nenhum (item de primeiro nível)</option>' +
+    candidates.map(i => `<option value="${i.id}">${escapeHtml(i.title)}</option>`).join('');
+  sel.value = selectedParentId || '';
+}
+
 function openAddModal(packKey, sectionTitle, sectionOrder){
   editingItemId = null;
   addingContext = { pack: packKey, section_title: sectionTitle, section_order: sectionOrder };
@@ -1316,6 +1345,9 @@ function openAddModal(packKey, sectionTitle, sectionOrder){
   document.getElementById('itemNote').value = '';
   document.getElementById('itemQty').value = '';
   document.getElementById('itemLink').value = '';
+  populateParentOptions(packKey, sectionOrder, '', null);
+  document.getElementById('itemParent').disabled = false;
+  document.getElementById('itemParentHint').style.display = 'none';
   document.getElementById('itemComprar').checked = false;
   document.getElementById('itemBuyName').value = '';
   document.getElementById('itemBuyQty').value = 1;
@@ -1333,11 +1365,15 @@ function openEditModal(id){
   if(!it) return;
   editingItemId = id; addingContext = null;
   const locked = !!it.obrigatorio;
+  const hasChildren = allItems.some(c => c.parent_id === id);
   document.getElementById('itemModalTitle').textContent = locked ? 'Editar quantidade' : 'Editar item';
   document.getElementById('itemTitle').value = it.title || '';
   document.getElementById('itemNote').value = it.note || '';
   document.getElementById('itemQty').value = it.quantity || '';
   document.getElementById('itemLink').value = it.link || '';
+  populateParentOptions(it.pack, it.section_order, it.parent_id, id);
+  document.getElementById('itemParent').disabled = hasChildren;
+  document.getElementById('itemParentHint').style.display = hasChildren ? 'block' : 'none';
   document.getElementById('itemComprar').checked = !!it.comprar;
   document.getElementById('itemBuyName').value = (it.buy_name && it.buy_name.trim()) || '';
   document.getElementById('itemBuyQty').value = it.buy_qty || 1;
@@ -1373,6 +1409,7 @@ document.getElementById('itemModalSave').addEventListener('click', async ()=>{
   if(linkRaw && !link){ errEl.textContent='O link precisa começar com http:// ou https://'; errEl.classList.add('is-visible'); return; }
   const comprar = document.getElementById('itemComprar').checked;
   const buyName = document.getElementById('itemBuyName').value.trim() || null;
+  const parentIdSel = document.getElementById('itemParent').value || null;
   let buyQty = 1;
   if(comprar){
     buyQty = parseInt(document.getElementById('itemBuyQty').value, 10);
@@ -1392,16 +1429,19 @@ document.getElementById('itemModalSave').addEventListener('click', async ()=>{
       ? { quantity: qty, comprar, buy_name: buyName, buy_qty: buyQty }
       : { title, note, quantity: qty, link, comprar, buy_name: buyName, buy_qty: buyQty };
     if(!comprar) patch.comprado = false; // some da lista de compras, limpa o "comprado"
+    if(!document.getElementById('itemParent').disabled && parentIdSel !== (editingItem.parent_id || null)){
+      patch.parent_id = parentIdSel;
+      patch.item_order = nextOrderForParent(parentIdSel, editingItem.pack, editingItem.section_order);
+    }
     const { error } = await sb.from('lgndcheck_checklist_items')
       .update(patch)
       .eq('id', editingItemId);
     if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); btn.disabled=false; return; }
   } else {
-    const siblings = allItems.filter(i=>i.pack===addingContext.pack && i.section_order===addingContext.section_order && !i.parent_id);
-    const nextOrder = siblings.length ? Math.max(...siblings.map(i=>i.item_order))+1 : 0;
+    const nextOrder = nextOrderForParent(parentIdSel, addingContext.pack, addingContext.section_order);
     const { error } = await sb.from('lgndcheck_checklist_items').insert({
       user_id: currentUser.id, pack: addingContext.pack, section_title: addingContext.section_title,
-      section_order: addingContext.section_order, item_order: nextOrder,
+      section_order: addingContext.section_order, item_order: nextOrder, parent_id: parentIdSel,
       title, note, quantity: qty, link, checked: false, comprar, buy_name: buyName, buy_qty: buyQty
     });
     if(error){ errEl.textContent='Erro ao salvar: '+error.message; errEl.classList.add('is-visible'); btn.disabled=false; return; }
