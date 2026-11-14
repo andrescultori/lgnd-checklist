@@ -22,15 +22,11 @@ body{
 }
 .page{ max-width:960px; margin:0 auto; padding:0 20px; }
 body{ overflow-x:hidden; }
-.table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-table{ min-width:560px; }
-#tabelaUsuarios{ min-width:760px; }
 .filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:14px; }
 .filters .field{ display:flex; flex-direction:column; gap:4px; }
 .filters label{ font-size:11.5px; font-weight:600; color:var(--ink-soft); }
 .filters select{ padding:8px 9px; border-radius:7px; border:1.5px solid var(--line); background:var(--canvas); font-family:inherit; font-size:13px; min-width:140px; }
-.sort-btn{ display:inline-flex; align-items:center; gap:4px; cursor:pointer; user-select:none; }
-.sort-btn .arrow{ font-size:11px; opacity:.6; }
+.filters .btn{ padding:8px 12px; }
 .gate{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 22px; background:var(--forest-deep); color:var(--paper); text-align:center; }
 .gate h1{ font-size:26px; margin:0 0 10px; font-family:'Bitter', serif; }
 .gate p{ opacity:.85; max-width:34ch; margin:0 0 24px; }
@@ -48,14 +44,23 @@ header.top h1{ font-size:22px; margin:0; }
 .kpi .label{ font-size:12.5px; color:var(--ink-soft); }
 section{ background:var(--paper); border-radius:12px; padding:18px 20px; margin-bottom:20px; }
 section h2{ font-size:17px; margin:0 0 14px; }
-table{ width:100%; border-collapse:collapse; font-size:13px; }
-th{ text-align:left; padding:8px 6px; border-bottom:2px solid var(--line); color:var(--ink-soft); font-weight:600; font-size:12px; }
-td{ padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:middle; }
-tr:last-child td{ border-bottom:none; }
 .badge{ display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
 .badge.sim{ background:var(--forest-tint); color:var(--forest-deep); }
 .badge.nao{ background:var(--clay-tint); color:var(--clay-deep); }
-.row-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+.row-actions{ display:flex; gap:6px; flex-wrap:wrap; margin-top:2px; }
+
+.user-card{ position:relative; background:var(--canvas); border:1.5px solid var(--line); border-radius:10px; padding:12px 44px 12px 14px; margin-bottom:10px; }
+.user-card-primary{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.user-card-primary .user-name{ font-size:14.5px; font-weight:600; }
+.user-card-primary .user-lgnd{ font-size:12px; color:var(--ink-soft); white-space:nowrap; flex-shrink:0; }
+.user-card-secondary{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
+.eye-btn{ position:absolute; top:10px; right:10px; background:none; border:none; color:var(--ink-soft); opacity:.5; cursor:pointer; padding:5px; border-radius:6px; touch-action:manipulation; }
+.eye-btn:hover{ opacity:.85; }
+.eye-btn.is-open{ opacity:1; color:var(--forest-deep); }
+.user-card-details{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:6px; }
+.detail-row{ display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12.5px; }
+.detail-label{ color:var(--ink-soft); font-weight:600; flex-shrink:0; }
+.detail-row > span:last-child{ text-align:right; overflow-wrap:anywhere; }
 button.btn{ font-family:'Work Sans', sans-serif; font-size:12px; font-weight:600; padding:6px 10px; border-radius:6px; border:1.5px solid var(--line); background:var(--canvas); color:var(--ink); cursor:pointer; }
 button.btn:hover{ border-color:var(--forest); }
 button.btn.danger{ border-color:var(--clay); color:var(--clay-deep); }
@@ -103,19 +108,25 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
           <label>Pista</label>
           <select id="filtroPista"><option value="">Todas</option></select>
         </div>
+        <div class="field">
+          <label>Aceita contato</label>
+          <select id="filtroContato">
+            <option value="">Todos</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Ordenar por</label>
+          <select id="sortFieldSelect">
+            <option value="nome_completo">Nome</option>
+            <option value="numero_legendario">LGND #</option>
+            <option value="created_at">Data de registro</option>
+          </select>
+        </div>
+        <button class="btn" id="sortDirBtn" type="button" aria-label="Inverter ordem">↑</button>
       </div>
-      <div class="table-scroll">
-        <table id="tabelaUsuarios">
-          <thead>
-            <tr>
-              <th><span class="sort-btn" id="sortNomeBtn">Nome <span class="arrow" id="sortNomeArrow">↑</span></span></th>
-              <th><span class="sort-btn" id="sortNumeroBtn">Nº Legendário <span class="arrow" id="sortNumeroArrow"></span></span></th>
-              <th>E-mail</th><th>Pista</th><th>1º TOP</th><th>Aceita contato</th><th>Data</th><th>Ações</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="8" class="loading">Carregando…</td></tr></tbody>
-        </table>
-      </div>
+      <div id="listaUsuarios"><div class="loading">Carregando…</div></div>
     </section>
 
     <footer style="text-align:center; margin-top:24px; padding-top:16px; border-top:1px dashed var(--line); font-size:12px; color:var(--ink-soft);">
@@ -158,9 +169,18 @@ document.getElementById('loginBtn').addEventListener('click', async ()=>{
 document.getElementById('logoutBtn').addEventListener('click', ()=> sb.auth.signOut());
 document.getElementById('deniedLogout').addEventListener('click', ()=> sb.auth.signOut());
 
+let currentUserId = null;
+
 sb.auth.onAuthStateChange((event, session)=>{
-  if(event === 'SIGNED_IN' && session){ boot(); }
-  if(event === 'SIGNED_OUT'){ showScreen('screenLogin'); }
+  // O cliente do Supabase reemite SIGNED_IN (com a mesma sessão) toda vez
+  // que a aba volta a ficar visível e o token é revalidado — sem esse
+  // filtro, voltar de outro app recarregava o painel inteiro. Só trata
+  // como login de verdade se for outro usuário (ou o primeiro da sessão).
+  if(event === 'SIGNED_IN' && session){
+    if(currentUserId && currentUserId === session.user.id) return;
+    boot();
+  }
+  if(event === 'SIGNED_OUT'){ currentUserId = null; showScreen('screenLogin'); }
 });
 
 async function boot(){
@@ -169,6 +189,7 @@ async function boot(){
   if(!session){ showScreen('screenLogin'); return; }
   try{
     await loadAll();
+    currentUserId = session.user.id;
     showScreen('screenAdmin');
   } catch(e){
     if(String(e.message).includes('Acesso negado')){ showScreen('screenDenied'); }
@@ -213,12 +234,50 @@ function fmtData(iso){
   return new Date(iso).toLocaleDateString('pt-BR');
 }
 
+function eyeIconSvg(){
+  return `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+}
+
+function userCardHtml(u){
+  return `
+    <div class="user-card">
+      <button class="eye-btn" onclick="toggleCardDetails(this)" aria-label="Ver mais detalhes" aria-expanded="false">${eyeIconSvg()}</button>
+      <div class="user-card-primary">
+        <span class="user-name">${escapeHtml(u.nome_completo)}</span>
+        <span class="user-lgnd">LGND #${escapeHtml(u.numero_legendario || '—')}</span>
+      </div>
+      <div class="user-card-secondary">
+        <span>${escapeHtml(u.pista || '—')}</span>
+        <span>${fmtData(u.created_at)}</span>
+      </div>
+      <div class="user-card-details" style="display:none">
+        <div class="detail-row"><span class="detail-label">E-mail</span><span>${escapeHtml(u.email)}</span></div>
+        <div class="detail-row"><span class="detail-label">1º TOP</span><span>${escapeHtml(u.primeiro_top || '—')}</span></div>
+        <div class="detail-row"><span class="detail-label">Aceita contato</span><span class="badge ${u.aceita_contato ? 'sim' : 'nao'}">${u.aceita_contato ? 'Sim' : 'Não'}</span></div>
+        <div class="row-actions">
+          <button class="btn danger" onclick="apagarUsuario('${u.id}', '${escapeHtml(u.email)}')">Apagar</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleCardDetails(btn){
+  const details = btn.closest('.user-card').querySelector('.user-card-details');
+  const isOpen = details.style.display !== 'none';
+  details.style.display = isOpen ? 'none' : 'block';
+  btn.classList.toggle('is-open', !isOpen);
+  btn.setAttribute('aria-expanded', String(!isOpen));
+}
+
 function renderUsuarios(){
-  const tbody = document.querySelector('#tabelaUsuarios tbody');
+  const lista_el = document.getElementById('listaUsuarios');
   const filtroPista = document.getElementById('filtroPista').value;
+  const filtroContato = document.getElementById('filtroContato').value;
 
   let lista = allUsers.filter(u => {
     if(filtroPista && (u.pista || '').trim() !== filtroPista) return false;
+    if(filtroContato === 'sim' && !u.aceita_contato) return false;
+    if(filtroContato === 'nao' && u.aceita_contato) return false;
     return true;
   });
 
@@ -227,22 +286,9 @@ function renderUsuarios(){
     return sortDir === 'asc' ? cmp : -cmp;
   });
 
-  if(!lista.length){ tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ink-soft);">Nenhum usuário encontrado</td></tr>'; return; }
+  if(!lista.length){ lista_el.innerHTML = '<p style="text-align:center;color:var(--ink-soft);padding:16px 0;">Nenhum usuário encontrado</p>'; return; }
 
-  tbody.innerHTML = lista.map(u => `
-    <tr>
-      <td>${escapeHtml(u.nome_completo)}</td>
-      <td>${escapeHtml(u.numero_legendario || '—')}</td>
-      <td>${escapeHtml(u.email)}</td>
-      <td>${escapeHtml(u.pista || '—')}</td>
-      <td>${escapeHtml(u.primeiro_top || '—')}</td>
-      <td><span class="badge ${u.aceita_contato ? 'sim' : 'nao'}">${u.aceita_contato ? 'Sim' : 'Não'}</span></td>
-      <td>${fmtData(u.created_at)}</td>
-      <td class="row-actions">
-        <button class="btn danger" onclick="apagarUsuario('${u.id}', '${escapeHtml(u.email)}')">Apagar</button>
-      </td>
-    </tr>
-  `).join('');
+  lista_el.innerHTML = lista.map(u => userCardHtml(u)).join('');
 }
 
 function compararUsuarios(a, b, field){
@@ -254,20 +300,22 @@ function compararUsuarios(a, b, field){
     if(va !== vb) return va - vb;
     return (a.numero_legendario || '').localeCompare(b.numero_legendario || '', 'pt-BR');
   }
+  if(field === 'created_at'){
+    const da = a.created_at ? new Date(a.created_at).getTime() : -Infinity;
+    const db = b.created_at ? new Date(b.created_at).getTime() : -Infinity;
+    return da - db;
+  }
   return (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR');
 }
 
-function ordenarPor(field){
-  if(sortField === field){ sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
-  else { sortField = field; sortDir = 'asc'; }
-  document.getElementById('sortNomeArrow').textContent = sortField === 'nome_completo' ? (sortDir === 'asc' ? '↑' : '↓') : '';
-  document.getElementById('sortNumeroArrow').textContent = sortField === 'numero_legendario' ? (sortDir === 'asc' ? '↑' : '↓') : '';
-  renderUsuarios();
-}
-
 document.getElementById('filtroPista').addEventListener('change', renderUsuarios);
-document.getElementById('sortNomeBtn').addEventListener('click', ()=> ordenarPor('nome_completo'));
-document.getElementById('sortNumeroBtn').addEventListener('click', ()=> ordenarPor('numero_legendario'));
+document.getElementById('filtroContato').addEventListener('change', renderUsuarios);
+document.getElementById('sortFieldSelect').addEventListener('change', (e)=>{ sortField = e.target.value; renderUsuarios(); });
+document.getElementById('sortDirBtn').addEventListener('click', ()=>{
+  sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  document.getElementById('sortDirBtn').textContent = sortDir === 'asc' ? '↑' : '↓';
+  renderUsuarios();
+});
 async function apagarUsuario(id, email){
   if(!confirm(`Apagar ${email} por completo? Isso remove o login e todos os dados dele. Não tem como desfazer.`)) return;
   try{ await callAdmin('delete_user', { userId: id }); await loadUsuarios(); await loadKpis(); }
