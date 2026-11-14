@@ -86,6 +86,14 @@ update public.lgndcheck_checklist_items
 set buy_name = 'Manta térmica'
 where title = 'Manta térmica';
 
+-- Itens manuais do pack 'comprar' já usavam o campo checked como "já
+-- comprei" (era a única marcação que existia ali antes desta feature).
+-- Carrega esse histórico pro novo campo comprado, que passa a ser o único
+-- usado pela aba Comprar a partir de agora.
+update public.lgndcheck_checklist_items
+set comprado = checked
+where pack = 'comprar';
+
 -- ============================================================
 -- 3) CONSERTO DE INDENTAÇÃO — achata "Chinelo" (filho de "Roupa p/
 --    dormir") e "Tênis extra" (filho de "Roupa p/ voltar") pra item de
