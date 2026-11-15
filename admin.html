@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Legendários</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@700;800&family=Work+Sans:wght@400;500;600;700&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
+<script src="vendor/supabase-js-2.119.0.js"></script>
 <style>
 :focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
 :root{
@@ -77,19 +77,19 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
 </head>
 <body>
 
-<div class="gate" id="screenLogin">
+<main class="gate" id="screenLogin">
   <h1>Painel Admin — Legendários</h1>
   <p>Acesso restrito. Entre com a conta Google autorizada.</p>
   <button class="google-btn" id="loginBtn">Entrar com Google</button>
   <p class="msg error" role="alert" id="loginError"></p>
-</div>
+</main>
 
 <div class="gate" id="screenLoading" style="display:none"><p>Carregando…</p></div>
-<div class="gate" id="screenDenied" style="display:none">
+<main class="gate" id="screenDenied" style="display:none">
   <h1>Acesso negado</h1>
   <p>Essa conta não tem permissão pra ver este painel.</p>
   <button class="logout-btn" id="deniedLogout">Sair</button>
-</div>
+</main>
 
 <div id="screenAdmin" style="display:none">
   <header class="top">
@@ -102,7 +102,7 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
     </div>
   </header>
 
-  <div class="page">
+  <main class="page">
     <div class="kpis" id="kpis"><div class="loading">Carregando KPIs…</div></div>
 
     <section>
@@ -136,7 +136,7 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
     <footer style="text-align:center; margin-top:24px; padding-top:16px; border-top:1px dashed var(--line); font-size:12px; color:var(--ink-soft);">
       Desenvolvido por <a href="https://github.com/andrescultori" target="_blank" rel="noopener noreferrer">André Scultori</a> · © 2026 · <a href="https://github.com/andrescultori/lgnd-checklist" target="_blank" rel="noopener noreferrer">GitHub</a>
     </footer>
-  </div>
+  </main>
 </div>
 
 <script>
