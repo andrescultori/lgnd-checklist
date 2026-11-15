@@ -174,7 +174,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .item{ background:var(--canvas); }
 .item-row{ display:flex; align-items:flex-start; gap:10px; padding:7px 0; cursor:pointer; background:var(--canvas); }
 
-.check{ flex-shrink:0; margin-top:1px; width:19px; height:19px; border-radius:5px; border:2px solid var(--line); background:var(--paper); position:relative; transition:background .15s ease, border-color .15s ease; }
+.check{ flex-shrink:0; margin-top:1px; padding:0; cursor:pointer; font:inherit; -webkit-appearance:none; appearance:none; width:19px; height:19px; border-radius:5px; border:2px solid var(--line); background:var(--paper); position:relative; transition:background .15s ease, border-color .15s ease; }
 .check.is-checked{ background:var(--accent); border-color:var(--accent); }
 .check.is-checked::after{ content:""; position:absolute; left:5px; top:1px; width:5px; height:9px; border:solid var(--paper); border-width:0 2px 2px 0; transform:rotate(40deg); }
 
@@ -225,10 +225,10 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 
 .overlay{
   position:fixed; inset:0; background:rgba(38,36,32,.5); display:flex; align-items:center;
-  justify-content:center; padding:24px; opacity:0; pointer-events:none; transition:opacity .18s ease; z-index:50;
+  justify-content:center; padding:24px; opacity:0; pointer-events:none; visibility:hidden; transition:opacity .18s ease, visibility 0s linear .18s; z-index:50;
   overflow-y:auto;
 }
-.overlay.is-visible{ opacity:1; pointer-events:auto; }
+.overlay.is-visible{ opacity:1; pointer-events:auto; visibility:visible; transition-delay:0s; }
 .modal-card{
   background:var(--paper); border-radius:14px; padding:22px 20px; max-width:380px; width:100%;
   box-shadow:0 12px 32px rgba(38,36,32,.28); transform:translateY(6px); transition:transform .18s ease;
@@ -341,29 +341,29 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
     <p class="lead">Antes de montar sua checklist, precisamos de alguns dados seus.</p>
 
     <div class="form-field">
-      <label>Nome completo</label>
+      <label for="cadNome">Nome completo</label>
       <input id="cadNome" type="text" maxlength="120" placeholder="Seu nome completo">
     </div>
     <div class="form-field">
-      <label>E-mail</label>
+      <label for="cadEmail">E-mail</label>
       <input id="cadEmail" type="text" disabled>
     </div>
     <div class="form-field">
-      <label>Nº de Legendário</label>
+      <label for="cadNumero">Nº de Legendário</label>
       <input id="cadNumero" type="text" maxlength="20" placeholder="Ex: 31032">
     </div>
     <div class="form-field">
-      <label>Pista <span style="font-weight:400">(nome oficial da sua pista)</span></label>
+      <label for="cadPista">Pista <span style="font-weight:400">(nome oficial da sua pista)</span></label>
       <input id="cadPista" type="text" maxlength="80" placeholder="Ex: Superação">
     </div>
     <div class="form-field">
-      <label>1º TOP <span style="font-weight:400">(qual foi seu TOP de Senderista?)</span></label>
+      <label for="cadTop">1º TOP <span style="font-weight:400">(qual foi seu TOP de Senderista?)</span></label>
       <input id="cadTop" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ex: 45">
     </div>
 
     <div class="form-check">
-      <input type="checkbox" id="cadConsent">
-      <p><b>Aceito receber novidades sobre os projetos do André por e-mail.</b><br>Não se preocupe — não vou te encher de e-mails. Só uso isso pra avisar sobre coisas que valem a pena.</p>
+      <input type="checkbox" id="cadConsent" aria-labelledby="cadConsentLbl">
+      <p id="cadConsentLbl"><b>Aceito receber novidades sobre os projetos do André por e-mail.</b><br>Não se preocupe — não vou te encher de e-mails. Só uso isso pra avisar sobre coisas que valem a pena.</p>
     </div>
 
     <p class="field-error" id="cadError"></p>
@@ -450,22 +450,22 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
 <div class="overlay" id="itemModalOverlay">
   <div class="modal-card">
     <p class="modal-title" id="itemModalTitle">Novo item</p>
-    <div class="form-field"><label>Título</label><input id="itemTitle" type="text" maxlength="80"></div>
-    <div class="form-field"><label>Nota (opcional)</label><input id="itemNote" type="text" maxlength="60" placeholder="Ex: OnNight 100"></div>
-    <div class="form-field"><label>Quantidade (opcional)</label><input id="itemQty" type="text" maxlength="30" placeholder="Ex: 2"></div>
-    <div class="form-field"><label>Link (opcional)</label><input id="itemLink" type="url" placeholder="https://"></div>
+    <div class="form-field"><label for="itemTitle">Título</label><input id="itemTitle" type="text" maxlength="80"></div>
+    <div class="form-field"><label for="itemNote">Nota (opcional)</label><input id="itemNote" type="text" maxlength="60" placeholder="Ex: OnNight 100"></div>
+    <div class="form-field"><label for="itemQty">Quantidade (opcional)</label><input id="itemQty" type="text" maxlength="30" placeholder="Ex: 2"></div>
+    <div class="form-field"><label for="itemLink">Link (opcional)</label><input id="itemLink" type="url" placeholder="https://"></div>
     <div class="form-field">
-      <label>Sub-item de</label>
+      <label for="itemParent">Sub-item de</label>
       <select id="itemParent"></select>
       <p class="form-hint" id="itemParentHint" style="display:none">Este item tem sub-itens — não pode virar sub-item de outro.</p>
     </div>
     <div class="form-check">
-      <input type="checkbox" id="itemComprar">
-      <p>Colocar na lista de <b>Comprar</b></p>
+      <input type="checkbox" id="itemComprar" aria-labelledby="itemComprarLbl">
+      <p id="itemComprarLbl">Colocar na lista de <b>Comprar</b></p>
     </div>
     <div id="itemBuyFields" style="display:none">
-      <div class="form-field"><label>Nome de compra (opcional)</label><input id="itemBuyName" type="text" maxlength="60" placeholder="Ex: Pilhas"></div>
-      <div class="form-field"><label>Quantidade de compra</label><input id="itemBuyQty" type="number" inputmode="numeric" min="1" max="999" step="1"></div>
+      <div class="form-field"><label for="itemBuyName">Nome de compra (opcional)</label><input id="itemBuyName" type="text" maxlength="60" placeholder="Ex: Pilhas"></div>
+      <div class="form-field"><label for="itemBuyQty">Quantidade de compra</label><input id="itemBuyQty" type="number" inputmode="numeric" min="1" max="999" step="1"></div>
       <p class="form-hint">Deixe o nome em branco pra usar o título do item. Itens com o mesmo nome de compra são somados e mostrados juntos na aba Comprar.</p>
     </div>
     <p class="form-hint" id="itemLockedHint" style="display:none">Este é um item obrigatório da checklist — o título, a nota e o link não podem ser alterados.</p>
@@ -482,13 +482,13 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
 <div class="overlay" id="settingsOverlay">
   <div class="modal-card">
     <p class="modal-title">Configurações</p>
-    <div class="form-field"><label>Nome completo</label><input id="setNome" type="text" maxlength="120"></div>
-    <div class="form-field"><label>Nº de Legendário</label><input id="setNumero" type="text" maxlength="20"></div>
-    <div class="form-field"><label>Pista</label><input id="setPista" type="text" maxlength="80" placeholder="Ex: Superação"></div>
-    <div class="form-field"><label>1º TOP</label><input id="setTop" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ex: 45"></div>
+    <div class="form-field"><label for="setNome">Nome completo</label><input id="setNome" type="text" maxlength="120"></div>
+    <div class="form-field"><label for="setNumero">Nº de Legendário</label><input id="setNumero" type="text" maxlength="20"></div>
+    <div class="form-field"><label for="setPista">Pista</label><input id="setPista" type="text" maxlength="80" placeholder="Ex: Superação"></div>
+    <div class="form-field"><label for="setTop">1º TOP</label><input id="setTop" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ex: 45"></div>
     <div class="form-check">
-      <input type="checkbox" id="setConsent">
-      <p>Aceito receber novidades sobre os projetos do André por e-mail.</p>
+      <input type="checkbox" id="setConsent" aria-labelledby="setConsentLbl">
+      <p id="setConsentLbl">Aceito receber novidades sobre os projetos do André por e-mail.</p>
     </div>
     <p class="field-error" id="setError"></p>
     <div class="modal-actions">
@@ -535,7 +535,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
   <div class="modal-card">
     <p class="modal-title" id="presetSaveTitle">Salvar preset</p>
     <p class="modal-body" id="presetSaveWarning" style="display:none"></p>
-    <div class="form-field"><label>Nome do preset</label><input id="presetSaveName" type="text" maxlength="40" placeholder="Ex: Minha lista de inverno"></div>
+    <div class="form-field"><label for="presetSaveName">Nome do preset</label><input id="presetSaveName" type="text" maxlength="40" placeholder="Ex: Minha lista de inverno"></div>
     <p class="field-error" id="presetSaveError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="presetSaveCancel">Cancelar</button>
@@ -555,10 +555,10 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
     </div>
 
     <div id="shareActive" style="display:none">
-      <div class="form-field"><label>Código</label>
+      <div class="form-field"><label for="shareCode">Código</label>
         <input id="shareCode" type="text" readonly style="text-align:center;font-weight:700;letter-spacing:2px;">
       </div>
-      <div class="form-field"><label>Link</label>
+      <div class="form-field"><label for="shareLink">Link</label>
         <input id="shareLink" type="text" readonly>
       </div>
       <button class="modal-btn modal-cancel" id="shareCopyBtn" style="width:100%;margin-bottom:10px;">Copiar link</button>
@@ -573,7 +573,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
 <div class="overlay" id="importCodeOverlay">
   <div class="modal-card">
     <p class="modal-title">Tenho um código</p>
-    <div class="form-field"><label>Código do preset</label><input id="importCodeInput" type="text" maxlength="10" placeholder="Ex: 9RWZWNVWJS" style="text-transform:uppercase;letter-spacing:1px;"></div>
+    <div class="form-field"><label for="importCodeInput">Código do preset</label><input id="importCodeInput" type="text" maxlength="10" placeholder="Ex: 9RWZWNVWJS" style="text-transform:uppercase;letter-spacing:1px;"></div>
     <p class="field-error" id="importCodeError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="importCodeCancel">Cancelar</button>
@@ -1038,8 +1038,8 @@ function itemRowHtml(it){
   return `
     <li class="item">
       <div class="item-row" data-id="${it.id}" onclick="onToggleClick('${it.id}')">
-        <div class="check ${checked?'is-checked':''}"></div>
-        <div class="item-text ${checked?'is-checked':''}">${escapeHtml(it.title)}${lockHtml}${noteHtml}${linkHtml}${cartBadgeHtml}</div>
+        <button type="button" class="check ${checked?'is-checked':''}" role="checkbox" aria-checked="${checked?'true':'false'}" aria-labelledby="t-${it.id}"></button>
+        <div class="item-text ${checked?'is-checked':''}" id="t-${it.id}">${escapeHtml(it.title)}${lockHtml}${noteHtml}${linkHtml}${cartBadgeHtml}</div>
         <button class="item-cart ${it.comprar?'is-active':''}" onclick="event.stopPropagation(); onToggleCart('${it.id}')" aria-label="${it.comprar ? 'Remover da lista de compras' : 'Adicionar à lista de compras'}" aria-pressed="${it.comprar?'true':'false'}">${cartIconSvg(16)}</button>
         <button class="item-edit" onclick="event.stopPropagation(); openEditModal('${it.id}')" aria-label="Editar item">✎</button>
       </div>
@@ -1187,7 +1187,7 @@ function comprarRowHtml(g){
   return `
     <li class="item comprar-group">
       <div class="item-row comprar-group-row" data-merge="${escapeHtml(g.key)}">
-        <div class="check ${g.comprado ? 'is-checked' : ''}"></div>
+        <button type="button" class="check ${g.comprado ? 'is-checked' : ''}" role="checkbox" aria-checked="${g.comprado ? 'true' : 'false'}" aria-label="${escapeHtml(g.displayName)}"></button>
         <div class="item-text ${g.comprado ? 'is-checked' : ''}">${escapeHtml(g.displayName)} ×${g.totalQty}</div>
       </div>
       <details class="comprar-sources-details">
@@ -1220,7 +1220,9 @@ async function onToggleClick(id){
   // optimistic DOM update
   const el = document.querySelector(`[data-id="${id}"]`);
   if(el){
-    el.querySelector('.check').classList.toggle('is-checked', it.checked);
+    const chk = el.querySelector('.check');
+    chk.classList.toggle('is-checked', it.checked);
+    chk.setAttribute('aria-checked', it.checked ? 'true' : 'false');
     el.querySelector('.item-text').classList.toggle('is-checked', it.checked);
   }
   renderCounts();
@@ -1838,6 +1840,44 @@ document.getElementById('settingsSave').addEventListener('click', async ()=>{
    INIT
    ============================================================ */
 boot();
+
+/* ============================================================
+   DIALOGS — semântica, foco e Escape (genérico para todo .overlay)
+   ============================================================ */
+(function(){
+  const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const opener = new WeakMap();
+  document.querySelectorAll('.overlay').forEach(ov=>{
+    const card = ov.querySelector('.modal-card');
+    if(!card) return;
+    card.setAttribute('role','dialog');
+    card.setAttribute('aria-modal','true');
+    card.setAttribute('tabindex','-1');
+    const title = card.querySelector('.modal-title');
+    if(title){ if(!title.id) title.id = ov.id + 'Title'; card.setAttribute('aria-labelledby', title.id); }
+    new MutationObserver(()=>{
+      if(ov.classList.contains('is-visible')){
+        if(!opener.has(ov)) opener.set(ov, document.activeElement);
+        const first = card.querySelector('input:not([readonly]),select,textarea') || card.querySelector(FOCUSABLE) || card;
+        setTimeout(()=>{ try{ first.focus({preventScroll:true}); }catch(_){} }, 30);
+      } else if(opener.has(ov)){
+        const back = opener.get(ov); opener.delete(ov);
+        if(back && back.isConnected && typeof back.focus === 'function') try{ back.focus({preventScroll:true}); }catch(_){}
+      }
+    }).observe(ov,{attributes:true,attributeFilter:['class']});
+  });
+  document.addEventListener('keydown',(e)=>{
+    const ov = document.querySelector('.overlay.is-visible');
+    if(!ov) return;
+    if(e.key === 'Escape'){ e.preventDefault(); ov.click(); return; } // reaproveita o handler de clique no fundo
+    if(e.key !== 'Tab') return;
+    const items = [...ov.querySelectorAll(FOCUSABLE)].filter(el=>el.offsetParent !== null);
+    if(!items.length) return;
+    const first = items[0], last = items[items.length-1];
+    if(e.shiftKey && (document.activeElement === first || !ov.contains(document.activeElement))){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
+})();
 </script>
 
 </body>
