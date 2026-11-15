@@ -41,6 +41,11 @@
 
 *{ box-sizing:border-box; }
 
+/* Anel de foco por teclado (só aparece em navegação por teclado) */
+:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+.masthead :focus-visible, .gate :focus-visible, .undo-banner :focus-visible{ outline-color:var(--paper); }
+.check:focus-visible{ outline-offset:3px; }
+
 html,body{
   margin:0;
   padding:0;
@@ -156,7 +161,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .pack-info{ background:var(--paper); border-left:4px solid var(--accent); border-radius:2px 10px 10px 2px; padding:14px 16px; margin-bottom:18px; transition:border-color .3s ease; }
 .pack-info .meta-row{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:var(--ink-soft); margin-bottom:8px; }
 .pack-info .meta-row span b{ color:var(--ink); font-weight:600; }
-.meta-value{ border-bottom:1px dashed var(--ink-soft); cursor:text; outline:none; }
+.meta-value{ border-bottom:1px dashed var(--ink-soft); cursor:text; }
 .meta-value:focus{ border-bottom-style:solid; border-bottom-color:var(--accent); }
 .meta-hint{ margin:0 0 8px; font-size:12.5px; font-style:italic; color:var(--ink-soft); }
 .pack-info p{ margin:0; font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
@@ -194,7 +199,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .item-cart{ flex-shrink:0; background:none; border:none; color:var(--line-strong); cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; padding:0; margin:-12px -8px; border-radius:6px; touch-action:manipulation; }
 .item-cart:hover{ color:var(--ink); }
 .item-cart.is-active{ color:var(--steel-deep); }
-.cart-badge{ display:inline-flex; vertical-align:middle; margin-left:4px; color:var(--steel-deep); cursor:pointer; }
+.cart-badge{ display:inline-flex; vertical-align:middle; margin-left:4px; color:var(--steel-deep); cursor:pointer; background:none; border:none; padding:0; font:inherit; }
 
 .subitems{ list-style:none; margin:0 0 2px 29px; padding:0 0 4px; border-left:2px solid var(--line); background:var(--canvas); }
 .subitems .item-row{ padding:5px 0 5px 12px; background:var(--canvas); }
@@ -264,7 +269,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
   width:100%; padding:10px 11px; border-radius:8px; border:1.5px solid var(--line-strong);
   background:var(--canvas); color:var(--ink); font-family:'Work Sans', sans-serif; font-size:14px;
 }
-.form-field input:focus, .form-field textarea:focus, .form-field select:focus{ outline:none; border-color:var(--accent); }
+.form-field input:focus, .form-field textarea:focus, .form-field select:focus{ border-color:var(--accent); }
 .form-field select:disabled{ opacity:.55; }
 .form-check{ display:flex; align-items:flex-start; gap:9px; margin:14px 0 4px; }
 .form-check input{ margin-top:3px; flex-shrink:0; width:17px; height:17px; }
@@ -1045,7 +1050,7 @@ function itemRowHtml(it){
     ? ` <svg class="item-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-label="Item obrigatório"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`
     : '';
   const cartBadgeHtml = it.comprar
-    ? ` <span class="cart-badge" title="Editar nome/quantidade de compra" onclick="event.stopPropagation(); openEditModal('${it.id}')">${cartIconSvg(11)}</span>` : '';
+    ? ` <button type="button" class="cart-badge" title="Editar nome/quantidade de compra" aria-label="Editar nome/quantidade de compra" onclick="event.stopPropagation(); openEditModal('${it.id}')">${cartIconSvg(11)}</button>` : '';
   const childrenHtml = (it.children && it.children.length)
     ? `<ul class="subitems">${it.children.map(ch=>itemRowHtml(ch)).join('')}</ul>` : '';
   return `
