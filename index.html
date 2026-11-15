@@ -236,6 +236,15 @@ main{ padding:16px 22px 0; background:var(--canvas); }
   margin:auto;
 }
 .overlay.is-visible .modal-card{ transform:translateY(0); }
+
+/* Movimento reduzido: o estado continua legível (cor, opacidade, posição final),
+   mas sem deslizes, giros nem a barra "varrendo". */
+@media (prefers-reduced-motion: reduce){
+  .progress-fill, .chevron, .modal-card, .undo-banner{ transition:none; }
+  .modal-card{ transform:none; }
+  .icon-btn:active, .modal-btn:active, .google-btn:active{ transform:none; }
+  html{ scroll-behavior:auto; }
+}
 .modal-title{ font-family:'Bitter', Georgia, serif; font-weight:800; font-size:19px; margin:0 0 8px; color:var(--ink); }
 .modal-body{ font-size:13.5px; line-height:1.5; color:var(--ink-soft); margin:0 0 18px; }
 .modal-actions{ display:flex; gap:10px; margin-top:6px; }
