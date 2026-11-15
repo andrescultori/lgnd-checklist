@@ -9,12 +9,26 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Legendários">
 <link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-180.png">
+<meta name="description" content="Checklist gratuito de equipamentos para os Legendários: monte sua mochila de ataque e sua cargueira, acompanhe o que falta comprar e compartilhe sua lista.">
+<link rel="canonical" href="https://lgndchecklist.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Checklist Legendários">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="Checklist — Legendários">
+<meta property="og:description" content="Monte sua mochila de ataque e sua cargueira, acompanhe o que falta comprar e compartilhe sua lista. Grátis, salva na nuvem.">
+<meta property="og:url" content="https://lgndchecklist.vercel.app/">
+<meta property="og:image" content="https://lgndchecklist.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Checklist Legendários: mochila de ataque, cargueira e lista de compras">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Checklist Legendários","url":"https://lgndchecklist.vercel.app/","applicationCategory":"LifestyleApplication","operatingSystem":"Web","inLanguage":"pt-BR","description":"Checklist gratuito de equipamentos de trekking para os Legendários, com mochila de ataque, cargueira, lista de compras e presets compartilháveis.","offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"}}</script>
 <title>Checklist — Legendários</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@700;800&family=Work+Sans:wght@400;500;600;700&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
+<script src="vendor/supabase-js-2.119.0.js"></script>
 <style>
 :root{
   color-scheme: light;
@@ -310,6 +324,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
 /* ---------- Login / Cadastro screens ---------- */
 
 .gate{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 22px; background:var(--forest-deep); color:var(--paper); text-align:center; }
+.sr-only{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .gate-logo{ width:min(240px, 68vw); height:auto; margin-bottom:20px; }
 .gate h1{ font-size:30px; margin:0 0 10px; }
 .gate p{ font-size:14.5px; opacity:.85; max-width:32ch; margin:0 0 28px; line-height:1.5; }
@@ -330,22 +345,23 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
 <body>
 
 <!-- ===================== Undo restaurar banner ===================== -->
-<div class="undo-banner" id="undoBanner">
+<div class="undo-banner" id="undoBanner" role="status">
   <span>Lista restaurada.</span>
   <button id="undoBannerBtn">Desfazer</button>
   <button class="undo-close" id="undoBannerClose" aria-label="Fechar">×</button>
 </div>
 
 <!-- ===================== LOGIN ===================== -->
-<div class="gate" id="screenLogin" style="display:none">
-  <img src="logo-legendarios-branco.png" alt="Legendários" class="gate-logo" width="240" height="190" decoding="async">
+<main class="gate" id="screenLogin" style="display:none">
+  <img src="logo-legendarios-branco.png" alt="" class="gate-logo" width="240" height="190" decoding="async">
+  <h1 class="sr-only">Checklist Legendários</h1>
   <p>Sua checklist de equipamentos, salva na nuvem e sempre à mão. Entre com sua conta Google pra começar.</p>
   <button class="google-btn" id="googleLoginBtn">
     <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
     Entrar com Google
   </button>
-  <p class="gate-error" id="loginError"></p>
-</div>
+  <p class="gate-error" role="alert" id="loginError"></p>
+</main>
 
 <!-- ===================== LOADING ===================== -->
 <div class="gate" id="screenLoading">
