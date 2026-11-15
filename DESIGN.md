@@ -19,7 +19,7 @@ Contexto de design para quem (ou o quê) for mexer na interface. Extraído do CS
 | `--ink-soft` | `#56503f` | texto secundário, rodapé |
 | `--line` | `#C9B993` | bordas e divisórias |
 | `--forest` / `-deep` / `-tint` | `#3F4B3A` / `#2C3527` / `#DFE4D6` | acento padrão (mochila de ataque) |
-| `--clay` / `-deep` / `-tint` | `#A6532E` / `#7C3D22` / `#F0DFCF` | acento da cargueira, ações destrutivas |
+| `--clay` / `-deep` / `-tint` | `#A6532E` / `#7C3D22` / `#F0DFCF` | acento da cargueira |
 | `--steel` / `-deep` / `-tint` | `#3D6B72` / `#294A50` / `#DCE7E7` | acento da aba Comprar |
 
 Cada mochila define `--accent`, `--accent-deep` e `--accent-tint` a partir de uma das três famílias. Use sempre os tokens, nunca hex solto.
