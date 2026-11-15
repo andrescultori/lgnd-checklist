@@ -6,3 +6,4 @@
 - **Admin:** Edge Function `admin-api` com JWT + allowlist de e-mail no servidor. A allowlist não fica neste repo público.
 - **Banco compartilhado:** o projeto Supabase também serve outros apps (prefixos diferentes). Toda tabela nova precisa de RLS e prefixo próprio.
 - **Reportar vulnerabilidade:** abra contato pelo perfil https://github.com/andrescultori (não publique detalhes em issue pública).
+- **Exclusão de conta:** Edge Function `lgndcheck-delete-account` (JWT obrigatório) apaga só a conta de quem chama, exige `confirm: "EXCLUIR"` e nunca aceita userId do cliente. O código está em `supabase/functions/`.
