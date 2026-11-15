@@ -10,9 +10,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@700;800&family=Work+Sans:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
 <style>
+:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
 :root{
   --canvas: #EDE4CF; --canvas-deep: #E1D3B2; --paper: #F6F0E1;
-  --ink: #262420; --ink-soft: #56503f; --line: #C9B993;
+  --ink: #262420; --ink-soft: #56503f; --line: #C9B993; --line-strong: #8C7B55;
   --forest: #3F4B3A; --forest-deep: #2C3527; --forest-tint: #DFE4D6;
   --clay: #A6532E; --clay-deep: #7C3D22; --clay-tint: #F0DFCF;
   --steel: #3D6B72; --steel-deep: #294A50; --steel-tint: #DCE7E7;
@@ -28,7 +29,7 @@ body{ overflow-x:hidden; }
 .filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:14px; }
 .filters .field{ display:flex; flex-direction:column; gap:4px; }
 .filters label{ font-size:11.5px; font-weight:600; color:var(--ink-soft); }
-.filters select{ padding:8px 9px; border-radius:7px; border:1.5px solid var(--line); background:var(--canvas); font-family:inherit; font-size:13px; min-width:140px; }
+.filters select{ padding:8px 9px; border-radius:7px; border:1.5px solid var(--line-strong); background:var(--canvas); font-family:inherit; font-size:13px; min-width:140px; }
 .filters .btn{ padding:8px 12px; }
 .gate{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 22px; background:var(--forest-deep); color:var(--paper); text-align:center; }
 .gate h1{ font-size:26px; margin:0 0 10px; font-family:'Bitter', serif; }
@@ -57,9 +58,9 @@ section h2{ font-size:17px; margin:0 0 14px; }
 .user-card-primary .user-name{ font-size:14.5px; font-weight:600; }
 .user-card-primary .user-lgnd{ font-size:12px; color:var(--ink-soft); white-space:nowrap; flex-shrink:0; }
 .user-card-secondary{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
-.eye-btn{ position:absolute; top:10px; right:10px; background:none; border:none; color:var(--ink-soft); opacity:.5; cursor:pointer; padding:5px; border-radius:6px; touch-action:manipulation; }
-.eye-btn:hover{ opacity:.85; }
-.eye-btn.is-open{ opacity:1; color:var(--forest-deep); }
+.eye-btn{ position:absolute; top:10px; right:10px; background:none; border:none; color:var(--line-strong); cursor:pointer; padding:5px; border-radius:6px; touch-action:manipulation; }
+.eye-btn:hover{ color:var(--ink); }
+.eye-btn.is-open{ color:var(--forest-deep); }
 .user-card-details{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:6px; }
 .detail-row{ display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12.5px; }
 .detail-label{ color:var(--ink-soft); font-weight:600; flex-shrink:0; }
@@ -80,7 +81,7 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
   <h1>Painel Admin — Legendários</h1>
   <p>Acesso restrito. Entre com a conta Google autorizada.</p>
   <button class="google-btn" id="loginBtn">Entrar com Google</button>
-  <p class="msg error" id="loginError"></p>
+  <p class="msg error" role="alert" id="loginError"></p>
 </div>
 
 <div class="gate" id="screenLoading" style="display:none"><p>Carregando…</p></div>
@@ -108,11 +109,11 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
       <h2>Usuários</h2>
       <div class="filters">
         <div class="field">
-          <label>Pista</label>
+          <label for="filtroPista">Pista</label>
           <select id="filtroPista"><option value="">Todas</option></select>
         </div>
         <div class="field">
-          <label>Aceita contato</label>
+          <label for="filtroContato">Aceita contato</label>
           <select id="filtroContato">
             <option value="">Todos</option>
             <option value="sim">Sim</option>
@@ -120,7 +121,7 @@ button.btn.primary{ background:var(--forest-deep); border-color:var(--forest-dee
           </select>
         </div>
         <div class="field">
-          <label>Ordenar por</label>
+          <label for="sortFieldSelect">Ordenar por</label>
           <select id="sortFieldSelect">
             <option value="nome_completo">Nome</option>
             <option value="numero_legendario">LGND #</option>

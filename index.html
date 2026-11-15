@@ -384,7 +384,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
       <p id="cadConsentLbl"><b>Aceito receber novidades sobre os projetos do André por e-mail.</b><br>Não se preocupe — não vou te encher de e-mails. Só uso isso pra avisar sobre coisas que valem a pena.</p>
     </div>
 
-    <p class="field-error" id="cadError"></p>
+    <p class="field-error" role="alert" id="cadError"></p>
 
     <button class="modal-btn modal-ok primary" id="cadSubmit" style="width:100%;margin-top:6px;">Começar minha checklist</button>
     <button class="text-btn muted" id="cadLogout">Sair / trocar de conta</button>
@@ -415,26 +415,26 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
 
     <div class="progress-wrap">
       <div class="progress-label"><span>Preparo geral</span><strong id="overallCount">0 de 0</strong></div>
-      <div class="progress-track"><div class="progress-fill" id="overallFill"></div></div>
+      <div class="progress-track" id="overallTrack" role="progressbar" aria-label="Preparo geral" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="overallFill"></div></div>
     </div>
   </header>
 
   <nav class="tags">
-    <button class="tag-btn is-active" data-pack="ataque">
+    <button class="tag-btn is-active" data-pack="ataque" aria-pressed="true">
       <div class="tag-top">
         <svg class="tag-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 8V6a4 4 0 0 1 8 0v2"/><rect x="5" y="8" width="14" height="13" rx="2.5"/><path d="M9 12h6M9 16h6"/></svg>
         <span class="tag-label">Ataque</span>
       </div>
       <span class="tag-count" id="countAtaque"></span>
     </button>
-    <button class="tag-btn" data-pack="cargueira">
+    <button class="tag-btn" data-pack="cargueira" aria-pressed="false">
       <div class="tag-top">
         <svg class="tag-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="9" width="17" height="11" rx="2.5"/><path d="M8 9V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3.5 13.5h17"/></svg>
         <span class="tag-label">Cargueira</span>
       </div>
       <span class="tag-count" id="countCargueira"></span>
     </button>
-    <button class="tag-btn" data-pack="comprar">
+    <button class="tag-btn" data-pack="comprar" aria-pressed="false">
       <div class="tag-top">
         <svg class="tag-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h2l1.6 9.6a2 2 0 0 0 2 1.7h7.3a2 2 0 0 0 2-1.6L20 9H6.5"/><circle cx="10" cy="20" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="20" r="1.3" fill="currentColor" stroke="none"/></svg>
         <span class="tag-label">Comprar</span>
@@ -487,7 +487,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
       <p class="form-hint">Deixe o nome em branco pra usar o título do item. Itens com o mesmo nome de compra são somados e mostrados juntos na aba Comprar.</p>
     </div>
     <p class="form-hint" id="itemLockedHint" style="display:none">Este é um item obrigatório da checklist — o título, a nota e o link não podem ser alterados.</p>
-    <p class="field-error" id="itemError"></p>
+    <p class="field-error" role="alert" id="itemError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="itemModalCancel">Cancelar</button>
       <button class="modal-btn modal-ok primary" id="itemModalSave">Salvar</button>
@@ -508,7 +508,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
       <input type="checkbox" id="setConsent" aria-labelledby="setConsentLbl">
       <p id="setConsentLbl">Aceito receber novidades sobre os projetos do André por e-mail.</p>
     </div>
-    <p class="field-error" id="setError"></p>
+    <p class="field-error" role="alert" id="setError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="settingsCancel">Cancelar</button>
       <button class="modal-btn modal-ok primary" id="settingsSave">Salvar</button>
@@ -540,7 +540,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
   <div class="modal-card">
     <p class="modal-title" id="restoreConfirmTitle">Restaurar?</p>
     <p class="modal-body" id="restoreConfirmBody"></p>
-    <p class="field-error" id="restoreConfirmError"></p>
+    <p class="field-error" role="alert" id="restoreConfirmError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="restoreConfirmCancel">Cancelar</button>
       <button class="modal-btn modal-ok" id="restoreConfirmOk">Restaurar</button>
@@ -554,7 +554,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
     <p class="modal-title" id="presetSaveTitle">Salvar preset</p>
     <p class="modal-body" id="presetSaveWarning" style="display:none"></p>
     <div class="form-field"><label for="presetSaveName">Nome do preset</label><input id="presetSaveName" type="text" maxlength="40" placeholder="Ex: Minha lista de inverno"></div>
-    <p class="field-error" id="presetSaveError"></p>
+    <p class="field-error" role="alert" id="presetSaveError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="presetSaveCancel">Cancelar</button>
       <button class="modal-btn modal-ok primary" id="presetSaveConfirm">Salvar</button>
@@ -592,7 +592,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
   <div class="modal-card">
     <p class="modal-title">Tenho um código</p>
     <div class="form-field"><label for="importCodeInput">Código do preset</label><input id="importCodeInput" type="text" maxlength="10" placeholder="Ex: 9RWZWNVWJS" style="text-transform:uppercase;letter-spacing:1px;"></div>
-    <p class="field-error" id="importCodeError"></p>
+    <p class="field-error" role="alert" id="importCodeError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="importCodeCancel">Cancelar</button>
       <button class="modal-btn modal-ok primary" id="importCodeSubmit">Ver preset</button>
@@ -607,7 +607,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
     <p class="modal-body" id="importSharedBy"></p>
     <ul class="import-counts" id="importCounts"></ul>
     <ul class="import-preview-list" id="importPreviewList"></ul>
-    <p class="field-error" id="importError"></p>
+    <p class="field-error" role="alert" id="importError"></p>
     <div class="modal-actions">
       <button class="modal-btn modal-cancel" id="importCancel">Fechar</button>
       <button class="modal-btn modal-ok primary" id="importSaveBtn">Salvar como meu preset</button>
@@ -1078,7 +1078,7 @@ function renderPack(packKey){
   activePack = packKey;
   const pack = PACKS[packKey];
   const a = ACCENTS[pack.accent];
-  document.querySelectorAll('.tag-btn').forEach(b=>b.classList.toggle('is-active', b.dataset.pack===packKey));
+  document.querySelectorAll('.tag-btn').forEach(b=>{ const on = b.dataset.pack===packKey; b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
   document.getElementById('masthead').style.background = a.deep;
   document.documentElement.style.setProperty('--accent', a.base);
   document.documentElement.style.setProperty('--accent-deep', a.deep);
@@ -1136,6 +1136,9 @@ function renderCounts(){
   const checked = allItems.filter(i=>i.checked).length;
   document.getElementById('overallCount').textContent = `${checked} de ${total}`;
   document.getElementById('overallFill').style.width = total ? `${(checked/total)*100}%` : '0%';
+  const track = document.getElementById('overallTrack');
+  track.setAttribute('aria-valuenow', total ? Math.round((checked/total)*100) : 0);
+  track.setAttribute('aria-valuetext', `${checked} de ${total} itens`);
 }
 
 /* ============================================================
