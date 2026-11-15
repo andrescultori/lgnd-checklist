@@ -548,6 +548,21 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
 
     <div class="settings-divider"></div>
     <button class="text-btn muted" id="settingsLogout">Sair da conta</button>
+    <button class="text-btn danger" id="settingsDelete">Excluir minha conta</button>
+  </div>
+</div>
+
+<!-- ===================== Excluir conta ===================== -->
+<div class="overlay" id="deleteAccountOverlay">
+  <div class="modal-card">
+    <p class="modal-title">Excluir minha conta?</p>
+    <p class="modal-body">Isso apaga para sempre seu perfil, suas listas, presets e backups. Não dá para desfazer.</p>
+    <div class="form-field"><label for="delConfirm">Digite <b>EXCLUIR</b> para confirmar</label><input id="delConfirm" type="text" autocomplete="off" autocapitalize="characters" maxlength="10"></div>
+    <p class="field-error" role="alert" id="delError"></p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-cancel" id="delCancel">Cancelar</button>
+      <button class="modal-btn modal-ok" id="delOk" disabled>Excluir tudo</button>
+    </div>
   </div>
 </div>
 
@@ -1877,6 +1892,46 @@ document.getElementById('settingsSave').addEventListener('click', async ()=>{
    INIT
    ============================================================ */
 boot();
+
+/* ============================================================
+   EXCLUIR CONTA (edge function lgndcheck-delete-account)
+   ============================================================ */
+(function(){
+  const ov = document.getElementById('deleteAccountOverlay');
+  const input = document.getElementById('delConfirm');
+  const ok = document.getElementById('delOk');
+  const err = document.getElementById('delError');
+  const close = ()=>{ ov.classList.remove('is-visible'); };
+  document.getElementById('settingsDelete').addEventListener('click', ()=>{
+    document.getElementById('settingsOverlay').classList.remove('is-visible');
+    input.value = ''; ok.disabled = true; err.classList.remove('is-visible'); err.textContent = '';
+    ov.classList.add('is-visible');
+  });
+  input.addEventListener('input', ()=>{ ok.disabled = input.value.trim().toUpperCase() !== 'EXCLUIR'; });
+  document.getElementById('delCancel').addEventListener('click', close);
+  ov.addEventListener('click', (e)=>{ if(e.target === ov) close(); });
+  ok.addEventListener('click', async ()=>{
+    ok.disabled = true;
+    err.classList.remove('is-visible');
+    try{
+      const { data: { session } } = await sb.auth.getSession();
+      if(!session) throw new Error('Sessão expirada. Entre de novo.');
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/lgndcheck-delete-account`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ confirm: 'EXCLUIR' }),
+      });
+      const out = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(out.error || 'Não foi possível excluir a conta.');
+      await sb.auth.signOut();
+      location.reload();
+    } catch(e){
+      err.textContent = e.message || 'Não foi possível excluir a conta.';
+      err.classList.add('is-visible');
+      ok.disabled = input.value.trim().toUpperCase() !== 'EXCLUIR';
+    }
+  });
+})();
 
 /* ============================================================
    DIALOGS — semântica, foco e Escape (genérico para todo .overlay)
