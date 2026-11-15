@@ -15,3 +15,15 @@ HTML/CSS/JS puro, sem build. `index.html` (app) e `admin.html` (painel). Supabas
 
 ## Rodar
 `python3 -m http.server 8000` e abrir http://localhost:8000
+
+## Skills installed (`.claude/skills/`, escopo do projeto)
+| Skill | Origem | Para quê |
+|---|---|---|
+| `impeccable` | pbakaus/impeccable v4.9.1 (cópia manual, **sem** hook de design) | Design/critique/polish de UI. Use `/impeccable init` uma vez para o contexto de design (lê `DESIGN.md`). |
+| `supabase` | supabase/agent-skills | Auth, migrations, CLI. |
+| `supabase-postgres-best-practices` | supabase/agent-skills | RLS e schema; obrigatório com dados pessoais (LGPD). |
+| `security-audit` | cloudflare/security-audit-skill | Modo guia por padrão; auditoria completa só sob pedido explícito. |
+
+Já disponíveis na conta (sem instalar): `/security-review` antes de cada merge, `webapp-testing`, `design:design-critique`, `design:accessibility-review`, `seo-ai-visibility`, `lgpd-web`.
+
+Notas: `skills-lock.json` registra as versões dos skills instalados via `npx skills`. O Impeccable foi copiado sem hook porque hooks rodam fora da aprovação do modelo e baixam um binário na primeira edição; para ativar, rode `npx impeccable install` e revise o hook.
