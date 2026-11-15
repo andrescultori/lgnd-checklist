@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#EDE4CF">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -184,10 +184,10 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .item-lock{ color:var(--ink-soft); opacity:.5; vertical-align:middle; margin-left:2px; }
 .item-link{ font-size:12px; color:var(--accent-deep); margin-left:6px; white-space:nowrap; }
 
-.item-edit{ flex-shrink:0; background:none; border:none; color:var(--ink-soft); opacity:.45; font-size:14px; cursor:pointer; padding:2px 4px; }
+.item-edit{ flex-shrink:0; background:none; border:none; color:var(--ink-soft); opacity:.45; font-size:16px; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; padding:0; margin:-12px -8px; touch-action:manipulation; }
 .item-edit:hover{ opacity:.9; }
 
-.item-cart{ flex-shrink:0; background:none; border:none; color:var(--ink-soft); opacity:.4; cursor:pointer; padding:4px 5px; margin:-4px -1px; border-radius:6px; touch-action:manipulation; }
+.item-cart{ flex-shrink:0; background:none; border:none; color:var(--ink-soft); opacity:.4; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; padding:0; margin:-12px -8px; border-radius:6px; touch-action:manipulation; }
 .item-cart:hover{ opacity:.8; }
 .item-cart.is-active{ color:var(--steel-deep); opacity:1; }
 .cart-badge{ display:inline-flex; vertical-align:middle; margin-left:4px; color:var(--steel-deep); cursor:pointer; }
@@ -286,7 +286,7 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
 }
 .undo-banner.is-visible{ transform:translateY(0); }
 .undo-banner button{ background:rgba(246,240,225,.18); border:1px solid rgba(246,240,225,.4); color:var(--paper); border-radius:6px; padding:5px 10px; font-family:inherit; font-size:12.5px; cursor:pointer; flex-shrink:0; }
-.undo-banner .undo-close{ background:none; border:none; padding:2px 4px; font-size:16px; line-height:1; }
+.undo-banner .undo-close{ background:none; border:none; padding:0; min-width:44px; min-height:44px; font-size:18px; line-height:1; }
 .undo-banner span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* ---------- Login / Cadastro screens ---------- */
