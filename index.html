@@ -54,6 +54,8 @@
 }
 
 *{ box-sizing:border-box; }
+/* iOS Safari dá zoom ao focar campo com fonte < 16px e não volta ao fechar o modal */
+input, select, textarea{ font-size:16px; }
 
 /* Anel de foco por teclado (só aparece em navegação por teclado) */
 :focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
@@ -175,7 +177,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .pack-info{ background:var(--paper); border-left:4px solid var(--accent); border-radius:2px 10px 10px 2px; padding:14px 16px; margin-bottom:18px; transition:border-color .3s ease; }
 .pack-info .meta-row{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:var(--ink-soft); margin-bottom:8px; }
 .pack-info .meta-row span b{ color:var(--ink); font-weight:600; }
-.meta-value{ border-bottom:1px dashed var(--ink-soft); cursor:text; }
+.meta-value{ border-bottom:1px dashed var(--ink-soft); cursor:text; font-size:16px; }
 .meta-value:focus{ border-bottom-style:solid; border-bottom-color:var(--accent); }
 .meta-hint{ margin:0 0 8px; font-size:12.5px; font-style:italic; color:var(--ink-soft); }
 .pack-info p{ margin:0; font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
@@ -207,6 +209,11 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .item-lock{ color:var(--line-strong); vertical-align:middle; margin-left:2px; }
 .item-link{ font-size:12px; color:var(--accent-deep); margin-left:6px; white-space:nowrap; }
 
+.item-move{ flex-shrink:0; background:none; border:none; color:var(--ink-soft); cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; padding:0; margin:-12px -4px; touch-action:manipulation; border-radius:6px; }
+.item-move:hover:not(:disabled){ color:var(--ink); background:var(--accent-tint); }
+.item-move:disabled{ color:var(--line); cursor:default; }
+.reorder-toggle{ margin-top:6px; padding:6px 0 0; color:var(--accent-deep); font-weight:600; text-align:left; }
+.sr-live{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .item-edit{ flex-shrink:0; background:none; border:none; color:var(--line-strong); font-size:16px; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; padding:0; margin:-12px -8px; touch-action:manipulation; }
 .item-edit:hover{ color:var(--ink); }
 
@@ -281,7 +288,7 @@ main{ padding:16px 22px 0; background:var(--canvas); }
 .form-field label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; }
 .form-field input, .form-field textarea, .form-field select{
   width:100%; padding:10px 11px; border-radius:8px; border:1.5px solid var(--line-strong);
-  background:var(--canvas); color:var(--ink); font-family:'Work Sans', sans-serif; font-size:14px;
+  background:var(--canvas); color:var(--ink); font-family:'Work Sans', sans-serif; font-size:16px;
 }
 .form-field input:focus, .form-field textarea:focus, .form-field select:focus{ border-color:var(--accent); }
 .form-field select:disabled{ opacity:.55; }
@@ -343,6 +350,8 @@ a.text-btn, a.text-btn:visited{ color:var(--ink); text-decoration:none; }
 </style>
 </head>
 <body>
+
+<div class="sr-live" id="liveStatus" role="status" aria-live="polite"></div>
 
 <!-- ===================== Undo restaurar banner ===================== -->
 <div class="undo-banner" id="undoBanner" role="status">
@@ -818,6 +827,7 @@ function templateToSnapshot(){
    ============================================================ */
 let currentUser = null;
 let currentProfile = null;
+let reorderMode = false; // modo "Reordenar itens" (setas em vez de editar/carrinho)
 let allItems = [];       // flat list of lgndcheck_checklist_items rows for this user
 let packMeta = {};        // { ataque: {sugestao,tamanho}, cargueira: {...} }
 let activePack = "ataque";
@@ -1069,7 +1079,18 @@ function buildSections(packKey){
   return [...sectionsMap.values()].sort((a,b)=>a.order-b.order);
 }
 
-function itemRowHtml(it){
+const CHEVRON_UP = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>';
+const CHEVRON_DOWN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+
+/* Posição do item entre os irmãos, na ordem em que aparecem na tela.
+   Itens obrigatórios sempre vêm primeiro na seção, então não cruzam essa fronteira. */
+function moveState(it, siblings, isChild){
+  const i = siblings.findIndex(x=>x.id===it.id);
+  const same = (x)=> isChild || !!x.obrigatorio === !!it.obrigatorio;
+  return { canUp: i>0 && same(siblings[i-1]), canDown: i>=0 && i<siblings.length-1 && same(siblings[i+1]) };
+}
+
+function itemRowHtml(it, siblings, isChild){
   const checked = !!it.checked;
   const noteParts = [];
   if(it.note) noteParts.push(escapeHtml(it.note));
@@ -1083,14 +1104,18 @@ function itemRowHtml(it){
   const cartBadgeHtml = it.comprar
     ? ` <button type="button" class="cart-badge" title="Editar nome/quantidade de compra" aria-label="Editar nome/quantidade de compra" onclick="event.stopPropagation(); openEditModal('${it.id}')">${cartIconSvg(11)}</button>` : '';
   const childrenHtml = (it.children && it.children.length)
-    ? `<ul class="subitems">${it.children.map(ch=>itemRowHtml(ch)).join('')}</ul>` : '';
+    ? `<ul class="subitems">${it.children.map(ch=>itemRowHtml(ch, it.children, true)).join('')}</ul>` : '';
+  const mv = reorderMode && siblings ? moveState(it, siblings, isChild) : null;
+  const actionsHtml = mv
+    ? `<button type="button" class="item-move" data-id="${it.id}" data-dir="-1" aria-label="Mover ${escapeHtml(it.title)} para cima" ${mv.canUp?'':'disabled'}>${CHEVRON_UP}</button><button type="button" class="item-move" data-id="${it.id}" data-dir="1" aria-label="Mover ${escapeHtml(it.title)} para baixo" ${mv.canDown?'':'disabled'}>${CHEVRON_DOWN}</button>`
+    : null;
   return `
     <li class="item">
       <div class="item-row" data-id="${it.id}" onclick="onToggleClick('${it.id}')">
-        <button type="button" class="check ${checked?'is-checked':''}" role="checkbox" aria-checked="${checked?'true':'false'}" aria-labelledby="t-${it.id}"></button>
-        <div class="item-text ${checked?'is-checked':''}" id="t-${it.id}">${escapeHtml(it.title)}${lockHtml}${noteHtml}${linkHtml}${cartBadgeHtml}</div>
-        <button class="item-cart ${it.comprar?'is-active':''}" onclick="event.stopPropagation(); onToggleCart('${it.id}')" aria-label="${it.comprar ? 'Remover da lista de compras' : 'Adicionar à lista de compras'}" aria-pressed="${it.comprar?'true':'false'}">${cartIconSvg(16)}</button>
-        <button class="item-edit" onclick="event.stopPropagation(); openEditModal('${it.id}')" aria-label="Editar item">✎</button>
+        <button type="button" class="check ${checked?'is-checked':''}" role="checkbox" aria-checked="${checked?'true':'false'}" aria-labelledby="t-${it.id}"${mv ? ' disabled' : ''}></button>
+        <div class="item-text ${checked?'is-checked':''}" id="t-${it.id}">${escapeHtml(it.title)}${lockHtml}${noteHtml}${linkHtml}${mv ? '' : cartBadgeHtml}</div>
+        ${actionsHtml || `<button class="item-cart ${it.comprar?'is-active':''}" onclick="event.stopPropagation(); onToggleCart('${it.id}')" aria-label="${it.comprar ? 'Remover da lista de compras' : 'Adicionar à lista de compras'}" aria-pressed="${it.comprar?'true':'false'}">${cartIconSvg(16)}</button>
+          <button class="item-edit" onclick="event.stopPropagation(); openEditModal('${it.id}')" aria-label="Editar item">✎</button>`}
       </div>
       ${childrenHtml}
     </li>`;
@@ -1115,7 +1140,7 @@ function renderPack(packKey){
   document.documentElement.style.setProperty('--accent-deep', a.deep);
   document.documentElement.style.setProperty('--accent-tint', a.tint);
 
-  if(packKey === 'comprar'){ renderComprarTab(); return; }
+  if(packKey === 'comprar'){ reorderMode = false; renderComprarTab(); return; }
 
   const sections = buildSections(packKey);
   const main = document.getElementById('main');
@@ -1128,6 +1153,7 @@ function renderPack(packKey){
       </div>
       <p class="meta-hint">Toque no texto acima pra colocar a sua mochila</p>` : ''}
       <p>${escapeHtml(pack.desc)}</p>
+      <button type="button" class="text-btn reorder-toggle" id="reorderToggle" aria-pressed="${reorderMode?'true':'false'}">${reorderMode ? 'Concluir reordenação' : 'Reordenar itens'}</button>
     </div>
     ${sections.map(sec=>{
       const ids = [];
@@ -1142,7 +1168,7 @@ function renderPack(packKey){
             <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
           </summary>
           <ul class="items">
-            ${sec.items.map(it=>itemRowHtml(it)).join('')}
+            ${sec.items.map(it=>itemRowHtml(it, sec.items, false)).join('')}
           </ul>
           <button class="add-item-btn" data-pack="${packKey}" data-section-title="${escapeHtml(sec.title)}" data-section-order="${sec.order}">+ Adicionar item</button>
         </details>
@@ -1266,6 +1292,7 @@ async function onToggleComprado(key){
    TOGGLE CHECK
    ============================================================ */
 async function onToggleClick(id){
+  if(reorderMode) return;
   const it = findItemById(id);
   if(!it) return;
   it.checked = !it.checked;
@@ -1312,7 +1339,69 @@ document.querySelectorAll('.tag-btn').forEach(btn=>{
    ADD ITEM BUTTON (delegated — data-* attrs avoid quoting issues
    that an inline onclick with an interpolated section title would hit)
    ============================================================ */
+/* ============================================================
+   REORDENAR ITENS (setas ▲▼; troca item_order com o vizinho)
+   ============================================================ */
+function announce(msg){
+  const el = document.getElementById('liveStatus');
+  if(el){ el.textContent = ''; setTimeout(()=>{ el.textContent = msg; }, 30); }
+}
+
+function siblingsOf(it){
+  if(it.parent_id) return allItems.filter(i=>i.parent_id===it.parent_id).sort((a,b)=>a.item_order-b.item_order);
+  return allItems.filter(i=>i.pack===it.pack && i.section_order===it.section_order && !i.parent_id && !!i.obrigatorio===!!it.obrigatorio)
+    .sort((a,b)=>a.item_order-b.item_order);
+}
+
+async function moveItem(id, dir){
+  const it = findItemById(id);
+  if(!it) return;
+  const sibs = siblingsOf(it);
+  const from = sibs.findIndex(x=>x.id===id);
+  const to = from + dir;
+  if(from < 0 || to < 0 || to >= sibs.length) return;
+
+  // valores de item_order atuais; se houver repetidos, renumera em sequência
+  let vals = sibs.map(x=>x.item_order).sort((a,b)=>a-b);
+  if(new Set(vals).size !== vals.length) vals = vals.map((_,i)=>vals[0]+i);
+  const reordered = sibs.slice();
+  reordered.splice(to, 0, reordered.splice(from, 1)[0]);
+
+  const before = new Map(sibs.map(x=>[x.id, x.item_order]));
+  const changes = [];
+  reordered.forEach((x,i)=>{ if(x.item_order !== vals[i]){ x.item_order = vals[i]; changes.push(x); } });
+
+  // re-render mantendo seções abertas/fechadas e a rolagem
+  const open = [...document.querySelectorAll('.section-block')].map(d=>d.open);
+  const y = window.scrollY;
+  renderPack(activePack);
+  document.querySelectorAll('.section-block').forEach((d,i)=>{ if(open[i] === false) d.open = false; });
+  window.scrollTo(0, y);
+  const mine = [...document.querySelectorAll(`.item-move[data-id="${id}"]`)];
+  const keep = mine.find(b=>Number(b.dataset.dir)===dir && !b.disabled) || mine.find(b=>!b.disabled);
+  if(keep) keep.focus({preventScroll:true});
+  announce(`${it.title} movido para ${dir<0?'cima':'baixo'}. Posição ${to+1} de ${sibs.length}.`);
+
+  const results = await Promise.all(changes.map(x=>
+    sb.from('lgndcheck_checklist_items').update({ item_order: x.item_order }).eq('id', x.id)));
+  if(results.some(r=>r.error)){
+    changes.forEach(x=>{ x.item_order = before.get(x.id); });
+    renderPack(activePack);
+    announce('Não foi possível salvar a nova ordem.');
+    alert('Não foi possível salvar a nova ordem. Tente de novo.');
+  }
+}
+
 document.getElementById('main').addEventListener('click', (e)=>{
+  const mv = e.target.closest('.item-move');
+  if(mv){ e.stopPropagation(); moveItem(mv.dataset.id, Number(mv.dataset.dir)); return; }
+  if(e.target.closest('#reorderToggle')){
+    reorderMode = !reorderMode;
+    renderPack(activePack);
+    const t = document.getElementById('reorderToggle'); if(t) t.focus({preventScroll:true});
+    announce(reorderMode ? 'Modo reordenar ligado. Use as setas de cada item.' : 'Modo reordenar desligado.');
+    return;
+  }
   const btn = e.target.closest('.add-item-btn');
   if(btn){ openAddModal(btn.dataset.pack, btn.dataset.sectionTitle, Number(btn.dataset.sectionOrder)); return; }
   const mergeRow = e.target.closest('.comprar-group-row');
